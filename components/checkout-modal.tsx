@@ -1,64 +1,98 @@
 "use client"
 
 import { useState } from "react"
-import { X, CreditCard, Clock, Check } from "lucide-react"
+import { useRouter } from "next/navigation"
+import { X, Clock, User, ClipboardList } from "lucide-react"
 import { useCart } from "./cart-provider"
+import { createOrder } from "@/app/actions/orders"
+import { formatPrice, getTimeSlots } from "@/lib/utils"
+import { cn } from "@/lib/utils"
+import type { OrderItem } from "@/types"
 
 interface CheckoutModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
 }
 
-function generateTimeSlots() {
-  const slots: string[] = []
-  for (let hour = 9; hour <= 19; hour++) {
-    for (let minute = 0; minute < 60; minute += 5) {
-      if (hour === 9 && minute < 30) continue
-      if (hour === 19 && minute > 0) continue
-      const time = `${hour.toString().padStart(2, "0")}:${minute.toString().padStart(2, "0")}`
-      slots.push(time)
-    }
-  }
-  return slots
-}
+const timeSlots = getTimeSlots("09:30", "19:00", 5)
 
-const timeSlots = generateTimeSlots()
+const steps = [
+  { label: "Informations", icon: User },
+  { label: "Creneau", icon: Clock },
+  { label: "Confirmation", icon: ClipboardList },
+]
 
 export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
+  const router = useRouter()
   const { items, totalPrice, clearCart, setIsCartOpen } = useCart()
-  const [step, setStep] = useState<"form" | "payment" | "success">("form")
+  const [step, setStep] = useState(0)
   const [firstName, setFirstName] = useState("")
   const [lastName, setLastName] = useState("")
+  const [email, setEmail] = useState("")
+  const [phone, setPhone] = useState("")
   const [timeSlot, setTimeSlot] = useState("")
   const [isProcessing, setIsProcessing] = useState(false)
+  const [error, setError] = useState("")
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!firstName || !lastName || !timeSlot) return
-    setStep("payment")
-  }
-
-  const handlePayment = async () => {
-    setIsProcessing(true)
-    // Simulate payment processing
-    await new Promise((resolve) => setTimeout(resolve, 2000))
-    setIsProcessing(false)
-    setStep("success")
+  const resetForm = () => {
+    setStep(0)
+    setFirstName("")
+    setLastName("")
+    setEmail("")
+    setPhone("")
+    setTimeSlot("")
+    setError("")
   }
 
   const handleClose = () => {
-    if (step === "success") {
-      clearCart()
-      setIsCartOpen(false)
-    }
     onOpenChange(false)
-    // Reset form after a delay
-    setTimeout(() => {
-      setStep("form")
-      setFirstName("")
-      setLastName("")
-      setTimeSlot("")
-    }, 300)
+    setTimeout(resetForm, 300)
+  }
+
+  const handleStepOneSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!firstName.trim() || !lastName.trim()) return
+    setStep(1)
+  }
+
+  const handleStepTwoSubmit = () => {
+    if (!timeSlot) return
+    setStep(2)
+  }
+
+  const handleConfirm = async () => {
+    setIsProcessing(true)
+    setError("")
+
+    const orderItems: OrderItem[] = items.map((item) => ({
+      product_id: item.id,
+      name: item.name,
+      price: item.price,
+      quantity: item.quantity,
+    }))
+
+    const result = await createOrder({
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      email: email.trim() || undefined,
+      phone: phone.trim() || undefined,
+      items: orderItems,
+      totalCents: totalPrice,
+      pickupTime: timeSlot,
+    })
+
+    setIsProcessing(false)
+
+    if ("error" in result) {
+      setError(result.error)
+      return
+    }
+
+    clearCart()
+    setIsCartOpen(false)
+    onOpenChange(false)
+    resetForm()
+    router.push(`/suivi/${result.id}`)
   }
 
   if (!open) return null
@@ -74,11 +108,9 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
       {/* Modal */}
       <div className="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-background border border-border rounded-xl shadow-2xl z-[70] max-h-[90vh] overflow-y-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border sticky top-0 bg-background">
+        <div className="flex items-center justify-between p-4 border-b border-border sticky top-0 bg-background rounded-t-xl">
           <h2 className="font-serif text-lg font-semibold text-foreground">
-            {step === "form" && "Finaliser la commande"}
-            {step === "payment" && "Paiement"}
-            {step === "success" && "Commande confirmee"}
+            Finaliser la commande
           </h2>
           <button
             onClick={handleClose}
@@ -89,14 +121,50 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
           </button>
         </div>
 
+        {/* Progress indicator */}
+        <div className="px-6 pt-5">
+          <div className="flex items-center justify-between">
+            {steps.map((s, i) => (
+              <div key={s.label} className="flex items-center gap-2">
+                <div
+                  className={cn(
+                    "flex items-center justify-center w-8 h-8 rounded-full text-xs font-medium transition-colors",
+                    i <= step
+                      ? "bg-accent text-accent-foreground"
+                      : "bg-secondary text-muted-foreground"
+                  )}
+                >
+                  {i + 1}
+                </div>
+                <span
+                  className={cn(
+                    "text-xs font-medium hidden sm:inline",
+                    i <= step ? "text-foreground" : "text-muted-foreground"
+                  )}
+                >
+                  {s.label}
+                </span>
+                {i < steps.length - 1 && (
+                  <div
+                    className={cn(
+                      "hidden sm:block w-8 h-px mx-2",
+                      i < step ? "bg-accent" : "bg-border"
+                    )}
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="p-6">
-          {step === "form" && (
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Name Fields */}
+          {/* Step 1: Customer info */}
+          {step === 0 && (
+            <form onSubmit={handleStepOneSubmit} className="space-y-5">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label htmlFor="firstName" className="text-sm font-medium text-foreground">
-                    Prenom
+                    Prenom *
                   </label>
                   <input
                     id="firstName"
@@ -110,7 +178,7 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 </div>
                 <div className="space-y-2">
                   <label htmlFor="lastName" className="text-sm font-medium text-foreground">
-                    Nom
+                    Nom *
                   </label>
                   <input
                     id="lastName"
@@ -123,40 +191,110 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                   />
                 </div>
               </div>
-
-              {/* Time Slot */}
               <div className="space-y-2">
-                <label htmlFor="timeSlot" className="text-sm font-medium text-foreground flex items-center gap-2">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  Creneau de retrait
+                <label htmlFor="email" className="text-sm font-medium text-foreground">
+                  Email
                 </label>
-                <select
-                  id="timeSlot"
-                  value={timeSlot}
-                  onChange={(e) => setTimeSlot(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  required
-                >
-                  <option value="">Choisir un creneau</option>
-                  {timeSlots.map((slot) => (
-                    <option key={slot} value={slot}>
-                      {slot}
-                    </option>
-                  ))}
-                </select>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="jean@exemple.fr"
+                  className="w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                />
               </div>
+              <div className="space-y-2">
+                <label htmlFor="phone" className="text-sm font-medium text-foreground">
+                  Telephone
+                </label>
+                <input
+                  id="phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="06 12 34 56 78"
+                  className="w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+              <button
+                type="submit"
+                className="w-full py-3 px-4 rounded-lg bg-accent text-accent-foreground font-medium hover:bg-accent/90 transition-colors"
+              >
+                Continuer
+              </button>
+            </form>
+          )}
 
-              {/* Order Summary */}
+          {/* Step 2: Time slot */}
+          {step === 1 && (
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                  Choisissez votre creneau de retrait
+                </label>
+                <div className="grid grid-cols-4 sm:grid-cols-6 gap-2 max-h-60 overflow-y-auto p-1">
+                  {timeSlots.map((slot) => (
+                    <button
+                      key={slot}
+                      onClick={() => setTimeSlot(slot)}
+                      className={cn(
+                        "px-2 py-2 rounded-lg text-sm font-medium transition-colors",
+                        timeSlot === slot
+                          ? "bg-accent text-accent-foreground"
+                          : "bg-secondary text-foreground hover:bg-border"
+                      )}
+                    >
+                      {slot}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setStep(0)}
+                  className="flex-1 py-3 px-4 rounded-lg border border-border text-foreground font-medium hover:bg-secondary transition-colors"
+                >
+                  Retour
+                </button>
+                <button
+                  onClick={handleStepTwoSubmit}
+                  disabled={!timeSlot}
+                  className="flex-1 py-3 px-4 rounded-lg bg-accent text-accent-foreground font-medium hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Continuer
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Order summary & confirm */}
+          {step === 2 && (
+            <div className="space-y-5">
               <div className="bg-secondary/50 rounded-lg p-4 space-y-3">
                 <h3 className="font-medium text-foreground">Recapitulatif</h3>
-                <div className="space-y-2 max-h-32 overflow-y-auto">
+                <div className="text-sm text-muted-foreground space-y-1">
+                  <p>{firstName} {lastName}</p>
+                  {email && <p>{email}</p>}
+                  {phone && <p>{phone}</p>}
+                  <p className="flex items-center gap-1">
+                    <Clock className="h-3.5 w-3.5" />
+                    Retrait a {timeSlot}
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-secondary/50 rounded-lg p-4 space-y-3">
+                <h3 className="font-medium text-foreground">Articles</h3>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
                   {items.map((item) => (
                     <div key={item.id} className="flex justify-between text-sm">
                       <span className="text-muted-foreground">
                         {item.quantity}x {item.name}
                       </span>
                       <span className="text-foreground">
-                        {(item.price * item.quantity).toFixed(2).replace(".", ",")} €
+                        {formatPrice(item.price * item.quantity)}
                       </span>
                     </div>
                   ))}
@@ -164,115 +302,32 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
                 <div className="pt-2 border-t border-border flex justify-between">
                   <span className="font-medium text-foreground">Total</span>
                   <span className="font-semibold text-foreground">
-                    {totalPrice.toFixed(2).replace(".", ",")} €
+                    {formatPrice(totalPrice)}
                   </span>
                 </div>
               </div>
 
-              <button
-                type="submit"
-                className="w-full py-3 px-4 rounded-lg bg-accent text-accent-foreground font-medium hover:bg-accent/90 transition-colors"
-              >
-                Continuer vers le paiement
-              </button>
-            </form>
-          )}
-
-          {step === "payment" && (
-            <div className="space-y-6">
-              <div className="bg-secondary/50 rounded-lg p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <CreditCard className="h-5 w-5 text-muted-foreground" />
-                  <span className="font-medium text-foreground">Paiement par carte</span>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  Integration Stripe - Mode demonstration
+              {error && (
+                <p className="text-sm text-destructive bg-destructive/10 rounded-lg px-4 py-2">
+                  {error}
                 </p>
-              </div>
-
-              {/* Mock Card Form */}
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground">
-                    Numero de carte
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="4242 4242 4242 4242"
-                    className="w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">
-                      Date d&apos;expiration
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="MM/AA"
-                      className="w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-foreground">
-                      CVC
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="123"
-                      className="w-full px-3 py-2 rounded-lg border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between pt-4 border-t border-border">
-                <span className="text-muted-foreground">Total a payer</span>
-                <span className="text-xl font-semibold text-foreground">
-                  {totalPrice.toFixed(2).replace(".", ",")} €
-                </span>
-              </div>
+              )}
 
               <div className="flex gap-3">
                 <button
-                  onClick={() => setStep("form")}
+                  onClick={() => setStep(1)}
                   className="flex-1 py-3 px-4 rounded-lg border border-border text-foreground font-medium hover:bg-secondary transition-colors"
                 >
                   Retour
                 </button>
                 <button
-                  onClick={handlePayment}
+                  onClick={handleConfirm}
                   disabled={isProcessing}
                   className="flex-1 py-3 px-4 rounded-lg bg-accent text-accent-foreground font-medium hover:bg-accent/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {isProcessing ? "Traitement..." : "Payer"}
+                  {isProcessing ? "Envoi..." : "Confirmer la commande"}
                 </button>
               </div>
-            </div>
-          )}
-
-          {step === "success" && (
-            <div className="text-center py-8 space-y-6">
-              <div className="w-16 h-16 mx-auto rounded-full bg-accent/10 flex items-center justify-center">
-                <Check className="h-8 w-8 text-accent" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-xl font-serif font-semibold text-foreground">
-                  Merci pour votre commande !
-                </h3>
-                <p className="text-muted-foreground">
-                  {firstName}, votre commande sera prete a {timeSlot}.
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Presentez-vous au comptoir pour recuperer votre commande.
-                </p>
-              </div>
-              <button
-                onClick={handleClose}
-                className="py-3 px-6 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
-              >
-                Fermer
-              </button>
             </div>
           )}
         </div>

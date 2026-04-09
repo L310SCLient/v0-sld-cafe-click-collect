@@ -1,26 +1,46 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Playfair_Display, Inter } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { Header } from '@/components/header'
 import { CartProvider } from '@/components/cart-provider'
+import { CartSidebar } from '@/components/cart-sidebar'
+import { Toaster } from '@/components/ui/sonner'
 
-const playfair = Playfair_Display({ 
+const playfair = Playfair_Display({
   subsets: ["latin"],
   variable: '--font-serif',
   display: 'swap',
-});
+})
 
-const inter = Inter({ 
+const inter = Inter({
   subsets: ["latin"],
   variable: '--font-sans',
   display: 'swap',
-});
+})
+
+export const viewport: Viewport = {
+  themeColor: '#5c3a1e',
+}
 
 export const metadata: Metadata = {
   title: 'SLD Cafe | Click & Collect Toulouse',
   description: 'Commandez vos viennoiseries, sandwichs et salades en ligne et recuperez-les au SLD Cafe a Toulouse.',
   generator: 'v0.app',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'SLD Cafe',
+  },
+  openGraph: {
+    title: 'SLD Cafe | Click & Collect Toulouse',
+    description: 'Commandez vos viennoiseries, sandwichs et salades en ligne et recuperez-les au SLD Cafe a Toulouse.',
+    url: 'https://sldcafe.fr',
+    siteName: 'SLD Cafe',
+    locale: 'fr_FR',
+    type: 'website',
+  },
   icons: {
     icon: [
       {
@@ -53,7 +73,9 @@ export default function RootLayout({
           <main className="min-h-screen pt-16">
             {children}
           </main>
+          <CartSidebar />
         </CartProvider>
+        <Toaster position="bottom-right" />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

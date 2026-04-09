@@ -1,26 +1,54 @@
 "use client"
 
 import { X, Minus, Plus, ShoppingBag } from "lucide-react"
+import { usePathname } from "next/navigation"
 import { useCart } from "./cart-provider"
 import { useState } from "react"
 import { CheckoutModal } from "./checkout-modal"
+import { formatPrice } from "@/lib/utils"
+import { cn } from "@/lib/utils"
 
 export function CartSidebar() {
+  const pathname = usePathname()
   const { items, isCartOpen, setIsCartOpen, updateQuantity, removeItem, totalPrice, totalItems } = useCart()
   const [checkoutOpen, setCheckoutOpen] = useState(false)
 
-  if (!isCartOpen) return null
+  // Hide cart on admin pages
+  if (pathname.startsWith('/admin')) return null
 
   return (
     <>
+      {/* Mobile: fixed bottom bar */}
+      {totalItems > 0 && !isCartOpen && (
+        <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-background border-t border-border p-3 safe-area-pb">
+          <button
+            onClick={() => setIsCartOpen(true)}
+            className="w-full flex items-center justify-between py-3 px-5 rounded-xl bg-accent text-accent-foreground font-medium"
+          >
+            <div className="flex items-center gap-2">
+              <ShoppingBag className="h-5 w-5" />
+              <span>{totalItems} article{totalItems > 1 ? "s" : ""}</span>
+            </div>
+            <span className="font-semibold">{formatPrice(totalPrice)}</span>
+          </button>
+        </div>
+      )}
+
       {/* Overlay */}
-      <div
-        className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40"
-        onClick={() => setIsCartOpen(false)}
-      />
+      {isCartOpen && (
+        <div
+          className="fixed inset-0 bg-foreground/20 backdrop-blur-sm z-40"
+          onClick={() => setIsCartOpen(false)}
+        />
+      )}
 
       {/* Sidebar */}
-      <div className="fixed right-0 top-0 h-full w-full max-w-md bg-background border-l border-border z-50 flex flex-col shadow-xl">
+      <div
+        className={cn(
+          "fixed right-0 top-0 h-full w-full max-w-md bg-background border-l border-border z-50 flex flex-col shadow-xl transition-transform duration-300 ease-in-out",
+          isCartOpen ? "translate-x-0" : "translate-x-full"
+        )}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
           <div className="flex items-center gap-2">
@@ -65,7 +93,7 @@ export function CartSidebar() {
                       {item.name}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      {item.price.toFixed(2).replace(".", ",")} € x {item.quantity}
+                      {formatPrice(item.price)} x {item.quantity}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -106,7 +134,7 @@ export function CartSidebar() {
             <div className="flex items-center justify-between">
               <span className="text-muted-foreground">Total</span>
               <span className="text-xl font-semibold text-foreground">
-                {totalPrice.toFixed(2).replace(".", ",")} €
+                {formatPrice(totalPrice)}
               </span>
             </div>
             <button
