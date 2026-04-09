@@ -8,8 +8,9 @@ import { useCart } from "./cart-provider"
 import { cn } from "@/lib/utils"
 
 const navItems = [
-  { href: "/", label: "Commander" },
-  { href: "/histoire", label: "Notre histoire" },
+  { href: "/", label: "Accueil" },
+  { href: "/carte", label: "Notre Carte" },
+  { href: "/histoire", label: "Notre Histoire" },
   { href: "/contact", label: "Contact" },
 ]
 
