@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { ProductCatalog } from "@/components/product-catalog"
 import { CategoryNav } from "@/components/category-nav"
 import { DailySpecialBanner } from "@/components/daily-special-banner"
-import type { Product, DailySpecial } from "@/types"
+import type { Product } from "@/types"
 
 const categoryMeta: Record<string, { name: string; emoji: string }> = {
   viennoiseries: { name: "Viennoiseries", emoji: "\u{1F950}" },
@@ -35,17 +35,6 @@ export default async function HomePage() {
       products: (products ?? []).filter((p: Product) => p.category === catId),
     }
   }).filter((c) => c.products.length > 0)
-
-  // Fetch today's daily special
-  const today = new Date().toISOString().split("T")[0]
-  const { data: specials } = await supabase
-    .from("daily_specials")
-    .select("*, product:products(*)")
-    .eq("date", today)
-    .limit(1)
-
-  const dailySpecial: (DailySpecial & { product: Product }) | null =
-    specials && specials.length > 0 ? specials[0] : null
 
   return (
     <div className="min-h-screen bg-background">
@@ -88,13 +77,8 @@ export default async function HomePage() {
       </section>
 
       {/* Daily Special */}
-      {dailySpecial && dailySpecial.product && (
-        <DailySpecialBanner
-          specialName={dailySpecial.product.name}
-          specialPrice={dailySpecial.product.price}
-          visibleFrom={dailySpecial.visible_from}
-        />
-      )}
+      <DailySpecialBanner />
+
 
       {/* Catalogue */}
       <div id="catalogue">

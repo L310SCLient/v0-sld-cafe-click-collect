@@ -1,47 +1,34 @@
-"use client"
+import { createClient } from "@/lib/supabase/server"
+import type { DailySpecial, Product } from "@/types"
+import { DailySpecialBannerClient } from "./daily-special-banner-client"
 
-import { useState, useEffect } from "react"
-import { Sparkles } from "lucide-react"
-import { formatPrice } from "@/lib/utils"
-
-interface DailySpecialBannerProps {
-  specialName: string
-  specialPrice: number
-  visibleFrom: string
+function todayStr(): string {
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = (d.getMonth() + 1).toString().padStart(2, "0")
+  const day = d.getDate().toString().padStart(2, "0")
+  return `${y}-${m}-${day}`
 }
 
-export function DailySpecialBanner({ specialName, specialPrice, visibleFrom }: DailySpecialBannerProps) {
-  const [visible, setVisible] = useState(false)
+export async function DailySpecialBanner() {
+  const supabase = await createClient()
 
-  useEffect(() => {
-    function checkTime() {
-      const now = new Date()
-      const [h, m] = visibleFrom.split(":").map(Number)
-      const fromMinutes = h * 60 + m
-      const nowMinutes = now.getHours() * 60 + now.getMinutes()
-      setVisible(nowMinutes >= fromMinutes)
-    }
+  const { data } = await supabase
+    .from("daily_specials")
+    .select("*, product:products(*)")
+    .eq("date", todayStr())
+    .limit(1)
+    .maybeSingle()
 
-    checkTime()
-    const interval = setInterval(checkTime, 60_000)
-    return () => clearInterval(interval)
-  }, [visibleFrom])
+  const special = data as (DailySpecial & { product: Product | null }) | null
 
-  if (!visible) return null
+  if (!special || !special.product) return null
 
   return (
-    <section className="bg-gradient-to-r from-amber-100 via-yellow-50 to-amber-100 border-y border-amber-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        <div className="flex items-center justify-center gap-3 text-center">
-          <Sparkles className="h-5 w-5 text-amber-600 shrink-0" />
-          <p className="text-sm sm:text-base font-medium text-amber-900">
-            <span className="font-semibold">Suggestion du jour :</span>{" "}
-            {specialName} &mdash;{" "}
-            <span className="font-semibold">{formatPrice(specialPrice)}</span>
-          </p>
-          <Sparkles className="h-5 w-5 text-amber-600 shrink-0" />
-        </div>
-      </div>
-    </section>
+    <DailySpecialBannerClient
+      specialName={special.product.name}
+      specialPrice={special.product.price}
+      visibleFrom={special.visible_from}
+    />
   )
 }

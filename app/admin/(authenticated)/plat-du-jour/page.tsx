@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { setDailySpecial, clearDailySpecial } from '@/app/actions/daily-specials'
 import { formatPrice } from '@/lib/utils'
@@ -16,47 +16,64 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { Calendar } from '@/components/ui/calendar'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Trash2, Save } from 'lucide-react'
+import { Trash2, Save, CalendarIcon } from 'lucide-react'
 import { toast } from 'sonner'
 
-function getWeekDays(offset: number): { date: string; label: string; dayName: string }[] {
-  const today = new Date()
-  const monday = new Date(today)
-  const dayOfWeek = today.getDay()
-  const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
-  monday.setDate(today.getDate() + diff + offset * 7)
+function toDateStr(d: Date): string {
+  const y = d.getFullYear()
+  const m = (d.getMonth() + 1).toString().padStart(2, '0')
+  const day = d.getDate().toString().padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
 
-  const dayNames = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi']
+function parseDateStr(s: string): Date {
+  const [y, m, d] = s.split('-').map(Number)
+  return new Date(y, m - 1, d)
+}
 
-  return dayNames.map((name, i) => {
-    const d = new Date(monday)
-    d.setDate(monday.getDate() + i)
-    const dateStr = d.toISOString().split('T')[0]
-    const label = d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' })
-    return { date: dateStr, label, dayName: name }
+function formatDateLong(s: string): string {
+  return parseDateStr(s).toLocaleDateString('fr-FR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
   })
 }
 
 function todayStr(): string {
-  return new Date().toISOString().split('T')[0]
+  return toDateStr(new Date())
 }
 
 export default function PlatDuJourPage() {
   const [products, setProducts] = useState<Product[]>([])
   const [specials, setSpecials] = useState<DailySpecial[]>([])
   const [loading, setLoading] = useState(true)
-  const [weekOffset, setWeekOffset] = useState(0)
 
-  const [edits, setEdits] = useState<Record<string, { productId: string; visibleFrom: string }>>({})
-  const [saving, setSaving] = useState<Record<string, boolean>>({})
+  const [selectedDate, setSelectedDate] = useState<Date>(() => new Date())
+  const [productId, setProductId] = useState<string>('')
+  const [visibleFrom, setVisibleFrom] = useState<string>('10:00')
+  const [saving, setSaving] = useState(false)
+
+  async function refreshSpecials() {
+    const supabase = createClient()
+    const { data: specs } = await supabase
+      .from('daily_specials')
+      .select('*, product:products(*)')
+      .order('date', { ascending: true })
+    setSpecials((specs as DailySpecial[]) ?? [])
+  }
 
   useEffect(() => {
     async function fetchData() {
       const supabase = createClient()
       const [{ data: prods }, { data: specs }] = await Promise.all([
         supabase.from('products').select('*').order('name'),
-        supabase.from('daily_specials').select('*, product:products(*)'),
+        supabase
+          .from('daily_specials')
+          .select('*, product:products(*)')
+          .order('date', { ascending: true }),
       ])
       setProducts((prods as Product[]) ?? [])
       setSpecials((specs as DailySpecial[]) ?? [])
@@ -65,76 +82,69 @@ export default function PlatDuJourPage() {
     fetchData()
   }, [])
 
-  const weekDays = getWeekDays(weekOffset)
+  const selectedDateStr = toDateStr(selectedDate)
   const today = todayStr()
 
-  function getSpecialForDate(date: string): DailySpecial | undefined {
-    return specials.find((s) => s.date === date)
-  }
+  // Sync form fields when selected date changes or specials load
+  useEffect(() => {
+    const existing = specials.find((s) => s.date === selectedDateStr)
+    if (existing) {
+      setProductId(existing.product_id)
+      setVisibleFrom(existing.visible_from)
+    } else {
+      setProductId('')
+      setVisibleFrom('10:00')
+    }
+  }, [selectedDateStr, specials])
 
-  function getEditForDate(date: string) {
-    const special = getSpecialForDate(date)
-    if (edits[date]) return edits[date]
-    if (special) return { productId: special.product_id, visibleFrom: special.visible_from }
-    return { productId: '', visibleFrom: '10:00' }
-  }
+  const upcomingSpecials = useMemo(
+    () => specials.filter((s) => s.date >= today),
+    [specials, today],
+  )
 
-  function updateEdit(date: string, field: 'productId' | 'visibleFrom', value: string) {
-    setEdits((prev) => ({
-      ...prev,
-      [date]: { ...getEditForDate(date), [field]: value },
-    }))
-  }
+  const specialDates = useMemo(
+    () => specials.map((s) => parseDateStr(s.date)),
+    [specials],
+  )
 
-  async function handleSave(date: string) {
-    const edit = getEditForDate(date)
-    if (!edit.productId) {
+  const existingForSelected = specials.find((s) => s.date === selectedDateStr)
+  const isPastDate = selectedDateStr < today
+
+  async function handleSave() {
+    if (!productId) {
       toast.error('Veuillez selectionner un produit')
       return
     }
-    setSaving((prev) => ({ ...prev, [date]: true }))
-    const result = await setDailySpecial(date, edit.productId, edit.visibleFrom)
+    setSaving(true)
+    const result = await setDailySpecial(selectedDateStr, productId, visibleFrom)
     if (result.error) {
       toast.error(result.error)
     } else {
       toast.success('Plat du jour enregistre')
-      const supabase = createClient()
-      const { data: specs } = await supabase.from('daily_specials').select('*, product:products(*)')
-      setSpecials((specs as DailySpecial[]) ?? [])
-      setEdits((prev) => {
-        const next = { ...prev }
-        delete next[date]
-        return next
-      })
+      await refreshSpecials()
     }
-    setSaving((prev) => ({ ...prev, [date]: false }))
+    setSaving(false)
   }
 
-  async function handleClear(date: string) {
-    setSaving((prev) => ({ ...prev, [date]: true }))
-    const result = await clearDailySpecial(date)
+  async function handleClear(dateStr: string) {
+    setSaving(true)
+    const result = await clearDailySpecial(dateStr)
     if (result.error) {
       toast.error(result.error)
     } else {
       toast.success('Plat du jour supprime')
-      setSpecials((prev) => prev.filter((s) => s.date !== date))
-      setEdits((prev) => {
-        const next = { ...prev }
-        delete next[date]
-        return next
-      })
+      await refreshSpecials()
     }
-    setSaving((prev) => ({ ...prev, [date]: false }))
+    setSaving(false)
   }
 
   if (loading) {
     return (
       <div>
         <Skeleton className="h-8 w-48 mb-6" />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-56 w-full rounded-xl" />
-          ))}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Skeleton className="h-80 w-full rounded-xl" />
+          <Skeleton className="h-80 w-full rounded-xl" />
         </div>
       </div>
     )
@@ -144,102 +154,167 @@ export default function PlatDuJourPage() {
     <div>
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <h1 className="text-2xl font-serif font-semibold">Plat du jour</h1>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setWeekOffset((w) => w - 1)}>
-            Semaine prec.
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setWeekOffset(0)}
-            disabled={weekOffset === 0}
-          >
-            Cette semaine
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => setWeekOffset((w) => w + 1)}>
-            Semaine suiv.
-          </Button>
-        </div>
+        <p className="text-sm text-muted-foreground">
+          Programmez les specialites pour n&apos;importe quelle date
+        </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        {weekDays.map((day) => {
-          const special = getSpecialForDate(day.date)
-          const edit = getEditForDate(day.date)
-          const isToday = day.date === today
+      <div className="grid gap-6 lg:grid-cols-[auto_1fr]">
+        {/* Calendar + upcoming list */}
+        <div className="space-y-6">
+          <Card className="gap-2 py-4">
+            <CardContent className="flex flex-col items-center">
+              <div className="flex items-center gap-2 mb-2 self-start">
+                <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                <Label className="text-sm font-medium">
+                  Selectionner une date
+                </Label>
+              </div>
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={(d) => d && setSelectedDate(d)}
+                modifiers={{ programmed: specialDates }}
+                modifiersClassNames={{
+                  programmed:
+                    'relative after:content-[""] after:absolute after:bottom-1 after:left-1/2 after:-translate-x-1/2 after:h-1 after:w-1 after:rounded-full after:bg-amber-500',
+                }}
+                disabled={{ before: parseDateStr(today) }}
+                showOutsideDays
+              />
+              <p className="text-xs text-muted-foreground mt-2 self-start">
+                <span className="inline-block h-1.5 w-1.5 rounded-full bg-amber-500 mr-1.5 align-middle" />
+                Dates avec un plat du jour programme
+              </p>
+            </CardContent>
+          </Card>
 
-          return (
-            <Card
-              key={day.date}
-              className={`gap-3 py-4 ${isToday ? 'ring-2 ring-amber-400 border-amber-400' : ''}`}
-            >
-              <CardContent className="space-y-3">
-                <div>
-                  <p className={`font-semibold ${isToday ? 'text-amber-700' : ''}`}>
-                    {day.dayName}
-                  </p>
-                  <p className="text-sm text-muted-foreground">{day.label}</p>
-                </div>
+          <Card className="gap-2 py-4">
+            <CardContent>
+              <h2 className="font-semibold mb-3">Specialites programmees</h2>
+              {upcomingSpecials.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  Aucune specialite programmee.
+                </p>
+              ) : (
+                <ul className="space-y-2 max-h-80 overflow-y-auto">
+                  {upcomingSpecials.map((s) => {
+                    const isSelected = s.date === selectedDateStr
+                    return (
+                      <li
+                        key={s.id}
+                        className={`flex items-center justify-between gap-2 rounded-md border p-2 text-sm ${
+                          isSelected
+                            ? 'border-amber-400 bg-amber-50'
+                            : 'border-border'
+                        }`}
+                      >
+                        <button
+                          type="button"
+                          className="flex-1 min-w-0 text-left"
+                          onClick={() => setSelectedDate(parseDateStr(s.date))}
+                        >
+                          <p className="font-medium truncate capitalize">
+                            {formatDateLong(s.date)}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {s.product?.name ?? 'Produit inconnu'}
+                            {s.product &&
+                              ` - ${formatPrice(s.product.price)}`}
+                            {' - a partir de '}
+                            {s.visible_from?.slice(0, 5)}
+                          </p>
+                        </button>
+                        <Button
+                          size="icon-sm"
+                          variant="outline"
+                          onClick={() => handleClear(s.date)}
+                          disabled={saving}
+                          aria-label="Supprimer"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+        </div>
 
-                <div className="space-y-2">
-                  <Label className="text-xs">Produit</Label>
-                  <Select
-                    value={edit.productId}
-                    onValueChange={(val) => updateEdit(day.date, 'productId', val)}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Choisir un produit" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {products.map((p) => (
-                        <SelectItem key={p.id} value={p.id}>
-                          {p.name} - {formatPrice(p.price)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+        {/* Editor for selected date */}
+        <Card className="gap-2 py-4 h-fit">
+          <CardContent className="space-y-4">
+            <div>
+              <p className="text-sm text-muted-foreground">Date selectionnee</p>
+              <p className="text-lg font-semibold capitalize">
+                {formatDateLong(selectedDateStr)}
+              </p>
+              {isPastDate && (
+                <p className="text-xs text-red-600 mt-1">
+                  Cette date est passee
+                </p>
+              )}
+            </div>
 
-                <div className="space-y-2">
-                  <Label className="text-xs">Visible a partir de</Label>
-                  <Input
-                    type="time"
-                    value={edit.visibleFrom}
-                    onChange={(e) => updateEdit(day.date, 'visibleFrom', e.target.value)}
-                  />
-                </div>
+            <div className="space-y-2">
+              <Label className="text-xs">Produit</Label>
+              <Select value={productId} onValueChange={setProductId}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Choisir un produit" />
+                </SelectTrigger>
+                <SelectContent>
+                  {products.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name} - {formatPrice(p.price)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-                {special?.product && (
-                  <p className="text-xs text-muted-foreground">
-                    Actuel : {special.product.name} ({formatPrice(special.product.price)})
-                  </p>
-                )}
+            <div className="space-y-2">
+              <Label className="text-xs">Visible a partir de</Label>
+              <Input
+                type="time"
+                value={visibleFrom}
+                onChange={(e) => setVisibleFrom(e.target.value)}
+              />
+            </div>
 
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => handleSave(day.date)}
-                    disabled={saving[day.date]}
-                  >
-                    <Save className="h-4 w-4 mr-1" />
-                    {saving[day.date] ? '...' : 'Enregistrer'}
-                  </Button>
-                  {special && (
-                    <Button
-                      size="icon-sm"
-                      variant="outline"
-                      onClick={() => handleClear(day.date)}
-                      disabled={saving[day.date]}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )
-        })}
+            {existingForSelected?.product && (
+              <div className="rounded-md bg-stone-50 border p-2 text-xs text-muted-foreground">
+                <span className="font-medium text-stone-700">
+                  Actuellement programme :
+                </span>{' '}
+                {existingForSelected.product.name} (
+                {formatPrice(existingForSelected.product.price)})
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <Button
+                className="flex-1"
+                onClick={handleSave}
+                disabled={saving || isPastDate}
+              >
+                <Save className="h-4 w-4 mr-1" />
+                {saving ? '...' : 'Enregistrer'}
+              </Button>
+              {existingForSelected && (
+                <Button
+                  variant="outline"
+                  onClick={() => handleClear(selectedDateStr)}
+                  disabled={saving}
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Retirer
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )
