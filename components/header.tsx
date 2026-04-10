@@ -19,25 +19,6 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [prevCount, setPrevCount] = useState(totalItems)
   const [badgeBounce, setBadgeBounce] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
-
-  const isHome = pathname === "/"
-  // On the homepage we overlay the hero and stay transparent until scroll.
-  // Everywhere else the header is always solid.
-  const transparent = isHome && !scrolled && !mobileMenuOpen
-
-  useEffect(() => {
-    if (!isHome) {
-      setScrolled(true)
-      return
-    }
-    setScrolled(window.scrollY > 40)
-    function onScroll() {
-      setScrolled(window.scrollY > 40)
-    }
-    window.addEventListener("scroll", onScroll, { passive: true })
-    return () => window.removeEventListener("scroll", onScroll)
-  }, [isHome])
 
   // Close mobile menu on route change
   useEffect(() => {
@@ -62,40 +43,23 @@ export function Header() {
   if (pathname.startsWith("/admin")) return null
 
   return (
-    <header
-      className={cn(
-        "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
-        transparent
-          ? "bg-transparent"
-          : "bg-white/95 backdrop-blur-md shadow-sm border-b border-stone-200/60",
-      )}
-    >
+    <header className="fixed top-0 left-0 right-0 z-50 bg-[#FAFAF7]/95 backdrop-blur-sm border-b border-stone-200/70">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link href="/" className="flex items-center gap-2">
-            <span
-              className={cn(
-                "font-serif text-2xl font-semibold italic tracking-tight transition-colors",
-                transparent ? "text-white" : "text-stone-900",
-              )}
-            >
+          <Link href="/" className="flex items-center">
+            <span className="font-serif text-xl font-normal tracking-tight text-stone-900">
               SLD Caf&eacute;
             </span>
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden md:flex items-center gap-10">
             {navItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
-                className={cn(
-                  "text-sm font-medium tracking-wide transition-colors",
-                  transparent
-                    ? "text-white/90 hover:text-white"
-                    : "text-stone-600 hover:text-amber-700",
-                )}
+                className="text-sm font-normal text-stone-700 hover:text-stone-900 transition-colors"
               >
                 {item.label}
               </Link>
@@ -103,22 +67,17 @@ export function Header() {
           </nav>
 
           {/* Cart Button + Mobile Menu */}
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-1 sm:gap-2">
             <button
               onClick={() => setIsCartOpen(true)}
-              className={cn(
-                "relative p-2 rounded-full transition-colors",
-                transparent
-                  ? "hover:bg-white/10 text-white"
-                  : "hover:bg-stone-100 text-stone-900",
-              )}
+              className="relative p-2 rounded-full hover:bg-stone-100 text-stone-800 transition-colors"
               aria-label="Ouvrir le panier"
             >
-              <ShoppingBag className="h-5 w-5" />
+              <ShoppingBag className="h-[18px] w-[18px]" strokeWidth={1.5} />
               {totalItems > 0 && (
                 <span
                   className={cn(
-                    "absolute -top-1 -right-1 h-5 w-5 rounded-full bg-amber-600 text-white text-xs font-medium flex items-center justify-center transition-transform",
+                    "absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-stone-800 text-white text-[10px] font-medium flex items-center justify-center transition-transform",
                     badgeBounce && "scale-125",
                   )}
                 >
@@ -130,20 +89,15 @@ export function Header() {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className={cn(
-                "md:hidden p-2 rounded-full transition-colors",
-                transparent
-                  ? "hover:bg-white/10 text-white"
-                  : "hover:bg-stone-100 text-stone-900",
-              )}
+              className="md:hidden p-2 rounded-full hover:bg-stone-100 text-stone-800 transition-colors"
               aria-label={
                 mobileMenuOpen ? "Fermer le menu" : "Ouvrir le menu"
               }
             >
               {mobileMenuOpen ? (
-                <X className="h-5 w-5" />
+                <X className="h-[18px] w-[18px]" strokeWidth={1.5} />
               ) : (
-                <Menu className="h-5 w-5" />
+                <Menu className="h-[18px] w-[18px]" strokeWidth={1.5} />
               )}
             </button>
           </div>
@@ -154,18 +108,18 @@ export function Header() {
           className={cn(
             "md:hidden overflow-hidden transition-all duration-300 ease-in-out",
             mobileMenuOpen
-              ? "max-h-72 pb-4 border-t border-stone-200/60"
+              ? "max-h-72 pb-4 border-t border-stone-200/70"
               : "max-h-0",
           )}
         >
           <nav className="pt-4">
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col">
               {navItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className="px-4 py-3 text-sm font-medium rounded-lg text-stone-700 hover:bg-stone-100 hover:text-amber-700 transition-colors"
+                  className="px-2 py-3 text-sm font-normal text-stone-700 hover:text-stone-900 transition-colors"
                 >
                   {item.label}
                 </Link>
