@@ -5,17 +5,31 @@ import { revalidatePath } from 'next/cache'
 
 export async function setDailySpecial(
   date: string,
-  productId: string,
-  visibleFrom: string = '10:00'
+  productId: string | null,
+  visibleFrom: string = '10:00',
+  customName?: string | null,
+  customPrice?: number | null,
+  customImageUrl?: string | null,
 ): Promise<{ error?: string }> {
   const supabase = await createClient()
 
+  const hasCustom = Boolean(customName && customPrice != null)
+  if (!productId && !hasCustom) {
+    return { error: 'Produit ou plat personnalise requis' }
+  }
+
+  const row = {
+    date,
+    visible_from: visibleFrom,
+    product_id: hasCustom ? null : productId,
+    custom_name: hasCustom ? customName : null,
+    custom_price: hasCustom ? customPrice : null,
+    custom_image_url: hasCustom ? (customImageUrl ?? null) : null,
+  }
+
   const { error } = await supabase
     .from('daily_specials')
-    .upsert(
-      { date, product_id: productId, visible_from: visibleFrom },
-      { onConflict: 'date' }
-    )
+    .upsert(row, { onConflict: 'date' })
 
   if (error) return { error: error.message }
 

@@ -30,11 +30,14 @@ export interface Order {
 
 export interface DailySpecial {
   id: string
-  product_id: string
+  product_id: string | null
   date: string
   visible_from: string
   created_at: string
-  product?: Product
+  custom_name: string | null
+  custom_price: number | null
+  custom_image_url: string | null
+  product?: Product | null
 }
 
 export interface CartItem {
