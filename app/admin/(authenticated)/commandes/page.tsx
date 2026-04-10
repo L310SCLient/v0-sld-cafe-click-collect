@@ -1,4 +1,5 @@
 import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { OrdersBoard } from '@/components/admin/orders-board'
 import { DashboardStats } from '@/components/admin/dashboard-stats'
 import type { Order } from '@/types'
@@ -20,6 +21,7 @@ function getPeriodBoundaries(now: Date = new Date()) {
 
 export default async function CommandesPage() {
   const supabase = await createClient()
+  const admin = createAdminClient()
 
   const { startOfDay, startOfWeek, startOfMonth } = getPeriodBoundaries()
 
@@ -29,7 +31,7 @@ export default async function CommandesPage() {
       .select('*')
       .in('status', ['pending', 'confirmed', 'ready', 'picked_up'])
       .order('created_at', { ascending: false }),
-    supabase
+    admin
       .from('orders')
       .select('total_cents, status, created_at')
       .gte('created_at', startOfMonth.toISOString()),
@@ -63,10 +65,10 @@ export default async function CommandesPage() {
     <div>
       <h1 className="text-2xl font-serif font-semibold mb-6">Commandes</h1>
       <DashboardStats
+        dayOrderCount={dayOrderCount}
         dayRevenueCents={dayRevenueCents}
         weekRevenueCents={weekRevenueCents}
         monthRevenueCents={monthRevenueCents}
-        dayOrderCount={dayOrderCount}
       />
       <OrdersBoard initialOrders={(orders as Order[]) ?? []} />
     </div>

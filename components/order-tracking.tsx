@@ -1,10 +1,9 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Check, Clock, ChefHat, PartyPopper } from "lucide-react"
+import { Check, Clock, ChefHat, PartyPopper, X } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
-import { formatPrice } from "@/lib/utils"
-import { cn } from "@/lib/utils"
+import { formatPrice, cn } from "@/lib/utils"
 import confetti from "canvas-confetti"
 import type { Order } from "@/types"
 
@@ -13,37 +12,78 @@ interface OrderTrackingProps {
 }
 
 const statusSteps = [
-  { key: "pending", label: "Commande recue", icon: Check },
-  { key: "confirmed", label: "En preparation", icon: ChefHat },
+  { key: "received", label: "Commande recue", icon: Check },
+  { key: "preparing", label: "En preparation", icon: ChefHat },
   { key: "ready", label: "Prete !", icon: PartyPopper },
 ] as const
 
-const statusIndex: Record<string, number> = {
-  pending: 0,
-  confirmed: 1,
-  ready: 2,
-  picked_up: 2,
+function stepStateFor(
+  status: Order["status"],
+  stepIndex: number,
+): "done" | "active" | "pending" {
+  // Step 0: Commande recue — always done
+  // Step 1: En preparation — active when confirmed or ready
+  // Step 2: Prete — active when ready
+  if (stepIndex === 0) return "done"
+  if (stepIndex === 1) {
+    if (status === "confirmed") return "active"
+    if (status === "ready" || status === "picked_up") return "done"
+    return "pending"
+  }
+  if (stepIndex === 2) {
+    if (status === "ready") return "active"
+    if (status === "picked_up") return "done"
+    return "pending"
+  }
+  return "pending"
+}
+
+function fireConfetti() {
+  // Multi-burst celebration
+  const defaults = { spread: 80, ticks: 200, gravity: 0.9, decay: 0.94 }
+
+  confetti({
+    ...defaults,
+    particleCount: 120,
+    origin: { y: 0.6, x: 0.5 },
+  })
+
+  setTimeout(() => {
+    confetti({
+      ...defaults,
+      particleCount: 80,
+      angle: 60,
+      origin: { y: 0.7, x: 0 },
+    })
+  }, 200)
+
+  setTimeout(() => {
+    confetti({
+      ...defaults,
+      particleCount: 80,
+      angle: 120,
+      origin: { y: 0.7, x: 1 },
+    })
+  }, 400)
 }
 
 export function OrderTracking({ order: initialOrder }: OrderTrackingProps) {
   const [order, setOrder] = useState<Order>(initialOrder)
+  const [showReadyOverlay, setShowReadyOverlay] = useState(
+    initialOrder.status === "ready",
+  )
   const [celebrated, setCelebrated] = useState(false)
-
-  const currentStep = statusIndex[order.status] ?? 0
 
   const celebrate = useCallback(() => {
     if (celebrated) return
     setCelebrated(true)
-    confetti({
-      particleCount: 120,
-      spread: 80,
-      origin: { y: 0.6 },
-    })
+    fireConfetti()
   }, [celebrated])
 
-  // Fire confetti when status becomes ready
+  // Fire confetti + overlay when order becomes ready
   useEffect(() => {
     if (order.status === "ready") {
+      setShowReadyOverlay(true)
       celebrate()
     }
   }, [order.status, celebrate])
@@ -64,7 +104,7 @@ export function OrderTracking({ order: initialOrder }: OrderTrackingProps) {
         },
         (payload) => {
           setOrder((prev) => ({ ...prev, ...payload.new } as Order))
-        }
+        },
       )
       .subscribe()
 
@@ -85,60 +125,63 @@ export function OrderTracking({ order: initialOrder }: OrderTrackingProps) {
         </p>
       </div>
 
-      {/* Celebration overlay */}
-      {order.status === "ready" && (
-        <div className="bg-green-50 border border-green-200 rounded-xl p-6 text-center space-y-2">
-          <PartyPopper className="h-10 w-10 text-green-600 mx-auto" />
-          <h2 className="font-serif text-xl font-semibold text-green-800">
-            Votre commande est prete !
-          </h2>
-          <p className="text-sm text-green-700">
-            Presentez-vous au comptoir pour la recuperer.
-          </p>
-        </div>
-      )}
-
       {/* Status timeline */}
       <div className="bg-card rounded-xl border border-border p-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-start justify-between gap-2">
           {statusSteps.map((step, i) => {
             const StepIcon = step.icon
-            const isCompleted = i <= currentStep
-            const isCurrent = i === currentStep
+            const state = stepStateFor(order.status, i)
+            const isLast = i === statusSteps.length - 1
+
             return (
-              <div key={step.key} className="flex flex-col items-center flex-1">
+              <div
+                key={step.key}
+                className="flex-1 flex flex-col items-center min-w-0"
+              >
                 <div className="flex items-center w-full">
                   {i > 0 && (
                     <div
                       className={cn(
-                        "flex-1 h-0.5 transition-colors",
-                        i <= currentStep ? "bg-accent" : "bg-border"
+                        "flex-1 h-0.5 transition-colors duration-500",
+                        state !== "pending" ? "bg-accent" : "bg-border",
                       )}
                     />
                   )}
                   <div
                     className={cn(
-                      "flex items-center justify-center w-10 h-10 rounded-full border-2 transition-colors shrink-0",
-                      isCompleted
-                        ? "bg-accent border-accent text-accent-foreground"
-                        : "bg-background border-border text-muted-foreground"
+                      "relative flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all duration-500 shrink-0",
+                      state === "done" &&
+                        "bg-accent border-accent text-accent-foreground",
+                      state === "active" &&
+                        "bg-accent border-accent text-accent-foreground animate-pulse",
+                      state === "pending" &&
+                        "bg-background border-border text-muted-foreground",
                     )}
                   >
                     <StepIcon className="h-5 w-5" />
+                    {state === "active" && (
+                      <span className="absolute inset-0 rounded-full border-2 border-accent animate-ping" />
+                    )}
                   </div>
-                  {i < statusSteps.length - 1 && (
+                  {!isLast && (
                     <div
                       className={cn(
-                        "flex-1 h-0.5 transition-colors",
-                        i < currentStep ? "bg-accent" : "bg-border"
+                        "flex-1 h-0.5 transition-colors duration-500",
+                        stepStateFor(order.status, i + 1) !== "pending"
+                          ? "bg-accent"
+                          : "bg-border",
                       )}
                     />
                   )}
                 </div>
                 <span
                   className={cn(
-                    "mt-2 text-xs font-medium text-center",
-                    isCurrent ? "text-accent" : isCompleted ? "text-foreground" : "text-muted-foreground"
+                    "mt-3 text-xs sm:text-sm font-medium text-center transition-colors",
+                    state === "active"
+                      ? "text-accent"
+                      : state === "done"
+                        ? "text-foreground"
+                        : "text-muted-foreground",
                   )}
                 >
                   {step.label}
@@ -151,13 +194,15 @@ export function OrderTracking({ order: initialOrder }: OrderTrackingProps) {
 
       {/* Pickup time */}
       <div className="bg-card rounded-xl border border-border p-6">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-full bg-secondary">
-            <Clock className="h-5 w-5 text-accent" />
+        <div className="flex items-center gap-4">
+          <div className="p-3 rounded-full bg-accent/10">
+            <Clock className="h-6 w-6 text-accent" />
           </div>
-          <div>
+          <div className="flex-1">
             <p className="text-sm text-muted-foreground">Creneau de retrait</p>
-            <p className="font-medium text-foreground">{order.pickup_time}</p>
+            <p className="text-2xl font-serif font-semibold text-foreground tabular-nums">
+              {order.pickup_time}
+            </p>
           </div>
         </div>
       </div>
@@ -171,7 +216,7 @@ export function OrderTracking({ order: initialOrder }: OrderTrackingProps) {
               <span className="text-muted-foreground">
                 {item.quantity}x {item.name}
               </span>
-              <span className="text-foreground">
+              <span className="text-foreground tabular-nums">
                 {formatPrice(item.price * item.quantity)}
               </span>
             </div>
@@ -179,7 +224,7 @@ export function OrderTracking({ order: initialOrder }: OrderTrackingProps) {
         </div>
         <div className="pt-3 border-t border-border flex justify-between">
           <span className="font-medium text-foreground">Total</span>
-          <span className="font-semibold text-foreground">
+          <span className="font-semibold text-foreground tabular-nums">
             {formatPrice(order.total_cents)}
           </span>
         </div>
@@ -198,6 +243,45 @@ export function OrderTracking({ order: initialOrder }: OrderTrackingProps) {
           <p className="text-sm text-muted-foreground">{order.customer_phone}</p>
         )}
       </div>
+
+      {/* Fullscreen "ready" overlay */}
+      {showReadyOverlay && order.status === "ready" && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-green-500/95 via-emerald-500/95 to-green-600/95 backdrop-blur-sm animate-in fade-in duration-500"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Commande prete"
+        >
+          <button
+            type="button"
+            onClick={() => setShowReadyOverlay(false)}
+            className="absolute top-6 right-6 p-2 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
+            aria-label="Fermer"
+          >
+            <X className="h-5 w-5" />
+          </button>
+
+          <div className="text-center px-6 max-w-lg">
+            <div className="text-7xl sm:text-8xl mb-4 animate-bounce">
+              &#127881;
+            </div>
+            <h2 className="font-serif text-3xl sm:text-5xl font-bold text-white animate-pulse">
+              Votre commande est prete !
+            </h2>
+            <p className="mt-6 text-lg sm:text-xl text-white/95">
+              Venez recuperer votre commande au comptoir
+            </p>
+            <div className="mt-8 inline-block bg-white/20 backdrop-blur-sm rounded-xl px-6 py-4 border border-white/30">
+              <p className="text-sm text-white/80 uppercase tracking-wider">
+                Creneau
+              </p>
+              <p className="text-2xl font-serif font-bold text-white tabular-nums">
+                {order.pickup_time}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
