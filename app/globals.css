@@ -124,3 +124,32 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  @keyframes hero-gradient-drift {
+    0%, 100% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+  }
+  .animate-hero-gradient {
+    background-size: 200% 200%;
+    animation: hero-gradient-drift 18s ease-in-out infinite;
+  }
+
+  @keyframes scroll-indicator-bounce {
+    0%, 100% {
+      transform: translateY(0);
+      opacity: 0.6;
+    }
+    50% {
+      transform: translateY(6px);
+      opacity: 1;
+    }
+  }
+  .animate-scroll-indicator {
+    animation: scroll-indicator-bounce 2s ease-in-out infinite;
+  }
+}
