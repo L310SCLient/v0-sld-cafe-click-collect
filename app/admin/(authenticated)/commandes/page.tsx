@@ -143,20 +143,11 @@ export default async function CommandesPage() {
 
           {/* Manual order */}
           <button
-            className="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors bg-[var(--terracotta)] hover:bg-[var(--terracotta-hover)] text-white shadow-[var(--shadow-xs)]"
             style={{
-              backgroundColor: 'var(--terracotta)',
-              color: '#ffffff',
               fontFamily: 'var(--font-mono)',
               fontSize: '12px',
               fontWeight: 500,
-              boxShadow: 'var(--shadow-xs)',
-            }}
-            onMouseOver={(e) => {
-              (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--terracotta-hover)'
-            }}
-            onMouseOut={(e) => {
-              (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--terracotta)'
             }}
           >
             <Plus className="h-4 w-4" />

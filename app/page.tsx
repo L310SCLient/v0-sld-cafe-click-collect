@@ -94,19 +94,7 @@ export default async function HomePage() {
               <div className="mt-10">
                 <a
                   href="#catalogue"
-                  className="inline-flex items-center gap-2 px-8 py-4 text-sm font-medium tracking-wide text-white transition-colors"
-                  style={{
-                    backgroundColor: "var(--terracotta)",
-                    borderRadius: "var(--radius-pill)",
-                  }}
-                  onMouseOver={(e) =>
-                    ((e.currentTarget as HTMLAnchorElement).style.backgroundColor =
-                      "var(--terracotta-hover)")
-                  }
-                  onMouseOut={(e) =>
-                    ((e.currentTarget as HTMLAnchorElement).style.backgroundColor =
-                      "var(--terracotta)")
-                  }
+                  className="inline-flex items-center gap-2 px-8 py-4 text-sm font-medium tracking-wide text-white transition-colors rounded-full bg-[var(--terracotta)] hover:bg-[var(--terracotta-hover)]"
                 >
                   Commander pour midi &rarr;
                 </a>
@@ -280,19 +268,7 @@ export default async function HomePage() {
           <div className="mt-10">
             <a
               href="#catalogue"
-              className="inline-flex items-center gap-2 px-8 py-4 text-sm font-medium tracking-wide text-white transition-colors"
-              style={{
-                backgroundColor: "var(--terracotta)",
-                borderRadius: "var(--radius-pill)",
-              }}
-              onMouseOver={(e) =>
-                ((e.currentTarget as HTMLAnchorElement).style.backgroundColor =
-                  "var(--terracotta-hover)")
-              }
-              onMouseOut={(e) =>
-                ((e.currentTarget as HTMLAnchorElement).style.backgroundColor =
-                  "var(--terracotta)")
-              }
+              className="inline-flex items-center gap-2 px-8 py-4 text-sm font-medium tracking-wide text-white transition-colors rounded-full bg-[var(--terracotta)] hover:bg-[var(--terracotta-hover)]"
             >
               Voir la carte du jour &rarr;
             </a>

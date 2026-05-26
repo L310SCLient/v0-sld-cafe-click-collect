@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils"
 
 const navItems = [
   { href: "/#catalogue", label: "La carte" },
-  { href: "/les-formules", label: "Les formules" },
+  { href: "/formules", label: "Les formules" },
   { href: "/contact", label: "Contact" },
 ]
 
