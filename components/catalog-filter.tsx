@@ -26,7 +26,7 @@ export function CatalogFilter({ categories }: CatalogFilterProps) {
   return (
     <>
       {/* ─── TABS ─────────────────────────────────────────────────────── */}
-      <nav className="sticky top-16 z-30 py-3 px-4 sm:px-6 lg:px-8">
+      <nav className="py-3 px-4 sm:px-6 lg:px-8 flex justify-center">
         <div
           className="flex items-center gap-1 overflow-x-auto scrollbar-hide w-fit max-w-full rounded-[var(--radius-pill)] bg-[var(--argile)]"
           style={{ padding: "6px" }}
