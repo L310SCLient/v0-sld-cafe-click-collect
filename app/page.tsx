@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
-import { ProductCatalog } from "@/components/product-catalog"
-import { CategoryNav } from "@/components/category-nav"
+import { CatalogFilter } from "@/components/catalog-filter"
 import { DailySpecialBanner } from "@/components/daily-special-banner"
 import type { Product } from "@/types"
 
@@ -359,11 +358,7 @@ export default async function HomePage() {
         </div>
 
         <div className="mt-10">
-          <CategoryNav />
-        </div>
-
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 pb-24">
-          <ProductCatalog categories={grouped} />
+          <CatalogFilter categories={grouped} />
         </div>
       </section>
 

@@ -11,11 +11,11 @@ interface CategoryGroup {
   products: Product[]
 }
 
-interface CarteCatalogClientProps {
+interface CatalogFilterProps {
   categories: CategoryGroup[]
 }
 
-export function CarteCatalogClient({ categories }: CarteCatalogClientProps) {
+export function CatalogFilter({ categories }: CatalogFilterProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
 
   const visibleCategories =

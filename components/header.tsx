@@ -8,7 +8,7 @@ import { useCart } from "./cart-provider"
 import { cn } from "@/lib/utils"
 
 const navItems = [
-  { href: "/#catalogue", label: "La carte" },
+  { href: "/carte", label: "La carte" },
   { href: "/formules", label: "Les formules" },
   { href: "/contact", label: "Contact" },
 ]

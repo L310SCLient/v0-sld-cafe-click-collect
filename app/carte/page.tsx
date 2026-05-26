@@ -2,7 +2,7 @@ import { Search, ChevronRight, Star } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import type { Product, DailySpecial } from "@/types"
 import { CarteSearchClient } from "./carte-search-client"
-import { CarteCatalogClient } from "./carte-catalog-client"
+import { CatalogFilter } from "@/components/catalog-filter"
 
 export const metadata = {
   title: "La carte | SLD Café",
@@ -273,7 +273,7 @@ export default async function CartePage() {
       </div>
 
       {/* ─── CATEGORY TABS + PRODUCT GRID (client-side filtering) ────────── */}
-      <CarteCatalogClient categories={grouped} />
+      <CatalogFilter categories={grouped} />
     </div>
   )
 }
