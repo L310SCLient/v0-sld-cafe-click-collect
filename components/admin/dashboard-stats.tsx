@@ -1,10 +1,86 @@
-import { formatPrice } from '@/lib/utils'
-
 interface DashboardStatsProps {
   dayOrderCount: number
   dayRevenueCents: number
   weekRevenueCents: number
   monthRevenueCents: number
+}
+
+function formatPriceCents(cents: number): string {
+  return (cents / 100).toFixed(2).replace('.', ',') + ' €'
+}
+
+interface StatCardProps {
+  label: string
+  value: string
+  hint?: string
+  change?: string
+}
+
+function StatCard({ label, value, hint, change }: StatCardProps) {
+  return (
+    <div
+      style={{
+        backgroundColor: 'var(--creme-surface)',
+        borderRadius: '14px',
+        padding: '20px 22px',
+        boxShadow: 'var(--shadow-xs)',
+        border: '1px solid var(--sable-soft)',
+      }}
+    >
+      <p
+        className="uppercase tracking-wider mb-2"
+        style={{
+          fontFamily: 'var(--font-mono)',
+          fontSize: '10px',
+          color: 'var(--espresso-60)',
+          letterSpacing: '0.08em',
+        }}
+      >
+        {label}
+      </p>
+
+      <div className="flex items-end gap-3">
+        <p
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontSize: '36px',
+            fontWeight: 500,
+            color: 'var(--espresso)',
+            lineHeight: 1,
+          }}
+        >
+          {value}
+        </p>
+
+        {change && (
+          <span
+            className="mb-0.5 px-2 py-0.5 rounded-full"
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '11px',
+              backgroundColor: '#D9DFCF',
+              color: 'var(--status-ready)',
+            }}
+          >
+            {change}
+          </span>
+        )}
+      </div>
+
+      {hint && (
+        <p
+          className="mt-1.5"
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '10px',
+            color: 'var(--espresso-60)',
+          }}
+        >
+          {hint}
+        </p>
+      )}
+    </div>
+  )
 }
 
 export function DashboardStats({
@@ -13,40 +89,26 @@ export function DashboardStats({
   weekRevenueCents,
   monthRevenueCents,
 }: DashboardStatsProps) {
-  const items = [
-    {
-      label: "Commandes aujourd'hui",
-      value: dayOrderCount.toLocaleString('fr-FR'),
-    },
-    {
-      label: 'Chiffre du jour',
-      value: formatPrice(dayRevenueCents),
-    },
-    {
-      label: 'Chiffre de la semaine',
-      value: formatPrice(weekRevenueCents),
-    },
-    {
-      label: 'Chiffre du mois',
-      value: formatPrice(monthRevenueCents),
-    },
-  ]
-
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8">
-      {items.map(({ label, value }) => (
-        <div
-          key={label}
-          className="rounded-xl p-5 sm:p-6 bg-[#1C1C1C] text-white border border-white/5 shadow-sm"
-        >
-          <p className="text-xs uppercase tracking-wider text-white/60 font-medium">
-            {label}
-          </p>
-          <p className="mt-2 text-2xl sm:text-3xl font-semibold tabular-nums text-accent">
-            {value}
-          </p>
-        </div>
-      ))}
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <StatCard
+        label="Commandes aujourd'hui"
+        value={dayOrderCount.toLocaleString('fr-FR')}
+        hint="commandes ce service"
+      />
+      <StatCard
+        label="Chiffre du jour"
+        value={formatPriceCents(dayRevenueCents)}
+        hint="hors commandes annulées"
+      />
+      <StatCard
+        label="Chiffre de la semaine"
+        value={formatPriceCents(weekRevenueCents)}
+      />
+      <StatCard
+        label="Chiffre du mois"
+        value={formatPriceCents(monthRevenueCents)}
+      />
     </div>
   )
 }

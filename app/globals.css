@@ -1,83 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&family=Hanken+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
-@custom-variant dark (&:is(.dark *));
-
+/* ============================================================
+   DESIGN TOKENS
+   ============================================================ */
 :root {
-  --background: oklch(0.97 0.01 85);
-  --foreground: oklch(0.25 0.02 50);
-  --card: oklch(0.99 0.005 85);
-  --card-foreground: oklch(0.25 0.02 50);
-  --popover: oklch(0.99 0.005 85);
-  --popover-foreground: oklch(0.25 0.02 50);
-  --primary: oklch(0.35 0.05 50);
-  --primary-foreground: oklch(0.98 0.01 85);
-  --secondary: oklch(0.93 0.02 85);
-  --secondary-foreground: oklch(0.30 0.03 50);
-  --muted: oklch(0.94 0.015 85);
-  --muted-foreground: oklch(0.50 0.02 50);
-  --accent: oklch(0.55 0.12 55);
-  --accent-foreground: oklch(0.98 0.01 85);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.88 0.02 85);
-  --input: oklch(0.92 0.015 85);
-  --ring: oklch(0.55 0.12 55);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.5rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  /* Palette */
+  --creme-bg: #F7F2E9;
+  --creme-surface: #FCFAF4;
+  --espresso: #241E1A;
+  --espresso-80: #241E1Acc;
+  --espresso-60: #241E1A99;
+  --espresso-40: #241E1A66;
+  --espresso-20: #241E1A26;
+  --espresso-08: #241E1A14;
+  --terracotta: #A85A2E;
+  --terracotta-hover: #8B4A24;
+  --sable: #C9A66B;
+  --sable-soft: #C9A66B40;
+  --argile: #EDE3D3;
+  --argile-deep: #E2D5BE;
+
+  /* Status colours */
+  --status-pending: #C08A3E;
+  --status-preparing: #A85A2E;
+  --status-ready: #5E7355;
+  --status-picked: #8A8178;
+
+  /* Typography */
+  --font-display: 'Playfair Display', serif;
+  --font-sans: 'Hanken Grotesk', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  /* Shadows */
+  --shadow-xs: 0 1px 2px rgba(60, 36, 20, 0.04);
+  --shadow-sm: 0 2px 6px rgba(60, 36, 20, 0.06), 0 1px 2px rgba(60, 36, 20, 0.04);
+  --shadow-md: 0 8px 24px rgba(60, 36, 20, 0.08), 0 2px 6px rgba(60, 36, 20, 0.05);
+  --shadow-lg: 0 24px 48px rgba(60, 36, 20, 0.10), 0 4px 12px rgba(60, 36, 20, 0.06);
+
+  /* Tailwind semantic aliases */
+  --background: var(--creme-bg);
+  --foreground: var(--espresso);
+  --card: var(--creme-surface);
+  --card-foreground: var(--espresso);
+  --popover: var(--creme-surface);
+  --popover-foreground: var(--espresso);
+  --primary: var(--espresso);
+  --primary-foreground: var(--creme-surface);
+  --secondary: var(--argile);
+  --secondary-foreground: var(--espresso);
+  --muted: var(--argile);
+  --muted-foreground: var(--espresso-60);
+  --accent: var(--terracotta);
+  --accent-foreground: var(--creme-surface);
+  --destructive: #C0392B;
+  --destructive-foreground: #FFFFFF;
+  --border: var(--espresso-20);
+  --input: var(--argile);
+  --ring: var(--terracotta);
+  --radius: 0.75rem;
 }
 
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
-}
-
+/* ============================================================
+   TAILWIND v4 THEME MAPPING
+   ============================================================ */
 @theme inline {
-  --font-sans: var(--font-sans), 'Inter', sans-serif;
-  --font-serif: var(--font-serif), 'Playfair Display', serif;
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
+  --font-sans: var(--font-sans);
+  --font-serif: var(--font-serif);
+  --font-mono: var(--font-mono);
+
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
@@ -97,34 +95,171 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Brand palette exposed as Tailwind colours */
+  --color-creme-bg: var(--creme-bg);
+  --color-creme-surface: var(--creme-surface);
+  --color-espresso: var(--espresso);
+  --color-espresso-80: var(--espresso-80);
+  --color-espresso-60: var(--espresso-60);
+  --color-espresso-40: var(--espresso-40);
+  --color-espresso-20: var(--espresso-20);
+  --color-espresso-08: var(--espresso-08);
+  --color-terracotta: var(--terracotta);
+  --color-terracotta-hover: var(--terracotta-hover);
+  --color-sable: var(--sable);
+  --color-sable-soft: var(--sable-soft);
+  --color-argile: var(--argile);
+  --color-argile-deep: var(--argile-deep);
+  --color-status-pending: var(--status-pending);
+  --color-status-preparing: var(--status-preparing);
+  --color-status-ready: var(--status-ready);
+  --color-status-picked: var(--status-picked);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-pill: var(--radius-pill);
+
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
 }
 
+/* ============================================================
+   BASE LAYER
+   ============================================================ */
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+
   html {
     scroll-behavior: smooth;
   }
+
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-sans);
   }
 }
 
+/* ============================================================
+   UTILITY CLASSES
+   ============================================================ */
+
+/* Warm gradient photo placeholder — base variant */
+.sld-photo {
+  background: linear-gradient(
+    135deg,
+    var(--argile-deep) 0%,
+    var(--argile) 40%,
+    color-mix(in srgb, var(--sable) 30%, var(--argile)) 100%
+  );
+  position: relative;
+  overflow: hidden;
+}
+
+.sld-photo::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 30% 30%,
+    rgba(201, 166, 107, 0.18) 0%,
+    transparent 65%
+  );
+  pointer-events: none;
+}
+
+/* Dark photo placeholder — used on espresso backgrounds */
+.sld-photo-dark {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--espresso) 80%, var(--sable) 20%) 0%,
+    color-mix(in srgb, var(--espresso) 90%, transparent 10%) 100%
+  );
+  position: relative;
+  overflow: hidden;
+}
+
+.sld-photo-dark::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 70% 70%,
+    rgba(201, 166, 107, 0.10) 0%,
+    transparent 60%
+  );
+  pointer-events: none;
+}
+
+/* Light photo placeholder — high-key creme variant */
+.sld-photo-light {
+  background: linear-gradient(
+    145deg,
+    var(--creme-surface) 0%,
+    var(--argile) 60%,
+    color-mix(in srgb, var(--sable) 20%, var(--creme-surface)) 100%
+  );
+  position: relative;
+  overflow: hidden;
+}
+
+.sld-photo-light::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 60% 20%,
+    rgba(201, 166, 107, 0.12) 0%,
+    transparent 55%
+  );
+  pointer-events: none;
+}
+
+/* Pulse dot — new-order alert indicator */
+@keyframes sld-pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 0 0 0 rgba(168, 90, 46, 0.4);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.05);
+    box-shadow: 0 0 0 6px rgba(168, 90, 46, 0);
+  }
+}
+
+.sld-pulse-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--terracotta);
+  animation: sld-pulse 1.6s ease-in-out infinite;
+}
+
+/* Shimmer skeleton animation */
+@keyframes sld-shimmer {
+  0% {
+    background-position: -400px 0;
+  }
+  100% {
+    background-position: 400px 0;
+  }
+}
+
+.sld-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--argile) 0px,
+    color-mix(in srgb, var(--argile) 60%, var(--creme-surface)) 40px,
+    var(--argile) 80px
+  );
+  background-size: 800px 100%;
+  animation: sld-shimmer 1.4s linear infinite;
+}

@@ -1,76 +1,547 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
-import { Check, Clock, ChefHat, PartyPopper, X } from "lucide-react"
+import { X, MapPin, Check, ChefHat, Package, Printer } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 import { formatPrice, cn } from "@/lib/utils"
 import confetti from "canvas-confetti"
 import type { Order } from "@/types"
+import { toast } from "sonner"
 
 interface OrderTrackingProps {
   order: Order
 }
 
-const statusSteps = [
-  { key: "received", label: "Commande recue", icon: Check },
-  { key: "preparing", label: "En preparation", icon: ChefHat },
-  { key: "ready", label: "Prete !", icon: PartyPopper },
-] as const
-
-function stepStateFor(
-  status: Order["status"],
-  stepIndex: number,
-): "done" | "active" | "pending" {
-  // Step 0: Commande recue — always done
-  // Step 1: En preparation — active when confirmed or ready
-  // Step 2: Prete — active when ready
-  if (stepIndex === 0) return "done"
-  if (stepIndex === 1) {
-    if (status === "confirmed") return "active"
-    if (status === "ready" || status === "picked_up") return "done"
-    return "pending"
-  }
-  if (stepIndex === 2) {
-    if (status === "ready") return "active"
-    if (status === "picked_up") return "done"
-    return "pending"
-  }
-  return "pending"
+// Génère un numéro court lisible à partir du UUID
+function shortOrderNumber(id: string): number {
+  return parseInt(id.replace(/-/g, "").slice(0, 8), 16) % 10000
 }
 
-function fireConfetti() {
-  // Multi-burst celebration
-  const defaults = { spread: 80, ticks: 200, gravity: 0.9, decay: 0.94 }
-
-  confetti({
-    ...defaults,
-    particleCount: 120,
-    origin: { y: 0.6, x: 0.5 },
+// Formatte la date de commande en français
+function formatOrderDate(dateStr: string): string {
+  return new Date(dateStr).toLocaleDateString("fr-FR", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
   })
+}
 
+// Calcule les minutes restantes jusqu'au créneau
+function minutesUntilPickup(pickupTime: string): number | null {
+  const [h, m] = pickupTime.split(":").map(Number)
+  if (isNaN(h) || isNaN(m)) return null
+  const now = new Date()
+  const pickup = new Date(now)
+  pickup.setHours(h, m, 0, 0)
+  const diff = Math.round((pickup.getTime() - now.getTime()) / 60_000)
+  return diff
+}
+
+// Message selon le statut
+function statusMessage(status: Order["status"], firstName: string): string {
+  switch (status) {
+    case "pending":
+      return `Votre commande est bien reçue, ${firstName}. L'équipe va la prendre en charge très vite.`
+    case "confirmed":
+      return "C'est parti ! Nos baristas sont déjà à l'œuvre."
+    case "ready":
+      return `Tout est prêt. Rendez-vous au comptoir, ${firstName} !`
+    case "picked_up":
+      return "Merci pour votre visite. À très vite !"
+    default:
+      return ""
+  }
+}
+
+// Badge couleur selon statut
+function StatusBadge({ status }: { status: Order["status"] }) {
+  const map: Record<Order["status"], { label: string; color: string }> = {
+    pending: { label: "En attente", color: "var(--status-pending)" },
+    confirmed: { label: "En préparation", color: "var(--status-preparing)" },
+    ready: { label: "Prête !", color: "var(--status-ready)" },
+    picked_up: { label: "Récupérée", color: "var(--status-picked)" },
+  }
+  const { label, color } = map[status]
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 px-3 py-1"
+      style={{
+        backgroundColor: color + "22",
+        color,
+        borderRadius: "var(--radius-pill)",
+        fontFamily: "var(--font-mono)",
+        fontSize: "11px",
+        textTransform: "uppercase",
+        letterSpacing: "0.08em",
+        border: `1px solid ${color}44`,
+      }}
+    >
+      <span
+        className="inline-block w-1.5 h-1.5 rounded-full"
+        style={{ backgroundColor: color }}
+      />
+      {label}
+    </span>
+  )
+}
+
+// Stepper horizontal 3 étapes
+function StepperCard({ status }: { status: Order["status"] }) {
+  const steps = [
+    { key: "received", label: "Commande reçue", icon: Check },
+    { key: "preparing", label: "En préparation", icon: ChefHat },
+    { key: "ready", label: "Prête à récupérer", icon: Package },
+  ] as const
+
+  function stateFor(idx: number): "done" | "current" | "future" {
+    if (status === "pending") {
+      if (idx === 0) return "current"
+      return "future"
+    }
+    if (status === "confirmed") {
+      if (idx === 0) return "done"
+      if (idx === 1) return "current"
+      return "future"
+    }
+    if (status === "ready" || status === "picked_up") {
+      return "done"
+    }
+    return "future"
+  }
+
+  return (
+    <div
+      className="p-6"
+      style={{
+        backgroundColor: "var(--creme-surface)",
+        borderRadius: "14px",
+        boxShadow: "var(--shadow-sm)",
+      }}
+    >
+      <div className="flex items-start">
+        {steps.map((step, i) => {
+          const state = stateFor(i)
+          const Icon = step.icon
+          const isLast = i === steps.length - 1
+
+          return (
+            <div key={step.key} className="flex items-start flex-1 last:flex-none">
+              <div className="flex flex-col items-center">
+                {/* Marqueur cercle */}
+                <div
+                  className="flex items-center justify-center w-[26px] h-[26px] rounded-full shrink-0 transition-all duration-500"
+                  style={{
+                    backgroundColor:
+                      state === "done" || state === "current"
+                        ? "var(--terracotta)"
+                        : "var(--creme-surface)",
+                    border:
+                      state === "future"
+                        ? "1.5px solid var(--sable)"
+                        : "none",
+                    color:
+                      state === "done" || state === "current"
+                        ? "var(--creme-surface)"
+                        : "var(--espresso-40)",
+                    boxShadow:
+                      state === "current"
+                        ? "0 0 0 6px rgba(168, 90, 46, 0.14)"
+                        : "none",
+                  }}
+                >
+                  {state === "done" ? (
+                    <Check className="h-3.5 w-3.5" strokeWidth={2.5} />
+                  ) : (
+                    <Icon className="h-3.5 w-3.5" strokeWidth={2} />
+                  )}
+                </div>
+
+                {/* Label */}
+                <p
+                  className="mt-2 text-center"
+                  style={{
+                    fontFamily: "var(--font-sans)",
+                    fontSize: "11px",
+                    fontWeight: state === "current" ? 500 : 400,
+                    color:
+                      state === "done"
+                        ? "var(--espresso)"
+                        : state === "current"
+                        ? "var(--terracotta)"
+                        : "var(--espresso-40)",
+                    maxWidth: "80px",
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {step.label}
+                </p>
+              </div>
+
+              {/* Ligne de connexion */}
+              {!isLast && (
+                <div
+                  className="flex-1 h-px mt-[13px] mx-2 transition-colors duration-500"
+                  style={{
+                    backgroundColor:
+                      stateFor(i + 1) !== "future"
+                        ? "var(--terracotta)"
+                        : "var(--espresso-20)",
+                  }}
+                />
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+// Carte créneau de retrait (fond espresso)
+function PickupCard({ pickupTime }: { pickupTime: string }) {
+  const mins = minutesUntilPickup(pickupTime)
+
+  return (
+    <div
+      className="p-6"
+      style={{
+        backgroundColor: "var(--espresso)",
+        borderRadius: "14px",
+        boxShadow: "inset 0 0 0 1px var(--sable-soft)",
+      }}
+    >
+      <p
+        className="mb-1"
+        style={{
+          fontFamily: "var(--font-mono)",
+          fontSize: "10px",
+          textTransform: "uppercase",
+          letterSpacing: "0.1em",
+          color: "var(--sable)",
+        }}
+      >
+        Retrait prévu
+      </p>
+
+      {/* Heure en Playfair 88px desktop / 36px mobile, italique, couleur sable */}
+      <p
+        style={{
+          fontFamily: "var(--font-display)",
+          fontSize: "clamp(36px, 8vw, 88px)",
+          fontWeight: 400,
+          fontStyle: "italic",
+          color: "var(--sable)",
+          lineHeight: 1,
+        }}
+      >
+        {pickupTime}
+      </p>
+
+      <p
+        className="mt-2"
+        style={{
+          fontFamily: "var(--font-sans)",
+          fontSize: "14px",
+          color: "var(--sable)",
+          opacity: 0.7,
+        }}
+      >
+        aujourd'hui
+        {mins !== null && mins > 0 && ` · dans ${mins} min`}
+        {mins !== null && mins <= 0 && " · c'est l'heure !"}
+      </p>
+
+      <div
+        className="flex items-center gap-2 mt-4 pt-4"
+        style={{ borderTop: "1px solid rgba(201, 166, 107, 0.2)" }}
+      >
+        <MapPin className="h-3.5 w-3.5 shrink-0" style={{ color: "var(--sable)" }} />
+        <p
+          style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: "12px",
+            color: "var(--sable)",
+            opacity: 0.7,
+          }}
+        >
+          Au comptoir · SLD Café
+        </p>
+      </div>
+    </div>
+  )
+}
+
+// Carte détails de commande
+function OrderDetailsCard({ order }: { order: Order }) {
+  return (
+    <div
+      className="p-6 space-y-4"
+      style={{
+        backgroundColor: "var(--creme-surface)",
+        borderRadius: "14px",
+        boxShadow: "var(--shadow-sm)",
+      }}
+    >
+      <p
+        style={{
+          fontFamily: "var(--font-mono)",
+          fontSize: "10px",
+          textTransform: "uppercase",
+          letterSpacing: "0.08em",
+          color: "var(--espresso-60)",
+        }}
+      >
+        Détails de la commande
+      </p>
+
+      <div className="space-y-2">
+        {order.items.map((item, idx) => (
+          <div key={idx} className="flex items-center justify-between">
+            <span
+              style={{
+                fontFamily: "var(--font-sans)",
+                fontSize: "14px",
+                color: "var(--espresso-80)",
+              }}
+            >
+              {item.quantity}× {item.name}
+            </span>
+            <span
+              style={{
+                fontFamily: "var(--font-mono)",
+                fontSize: "13px",
+                color: "var(--espresso)",
+              }}
+            >
+              {formatPrice(item.price * item.quantity)}
+            </span>
+          </div>
+        ))}
+      </div>
+
+      <div
+        className="flex items-center justify-between pt-3"
+        style={{ borderTop: "1px solid var(--espresso-08)" }}
+      >
+        <span
+          style={{
+            fontFamily: "var(--font-sans)",
+            fontSize: "15px",
+            fontWeight: 500,
+            color: "var(--espresso)",
+          }}
+        >
+          Total
+        </span>
+        <span
+          style={{
+            fontFamily: "var(--font-display)",
+            fontSize: "24px",
+            fontWeight: 500,
+            color: "var(--espresso)",
+          }}
+        >
+          {formatPrice(order.total_cents)}
+        </span>
+      </div>
+
+      {/* Informations client */}
+      <div
+        className="pt-4 space-y-1"
+        style={{ borderTop: "1px solid var(--espresso-08)" }}
+      >
+        <p
+          style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: "10px",
+            textTransform: "uppercase",
+            letterSpacing: "0.08em",
+            color: "var(--espresso-60)",
+          }}
+        >
+          Client
+        </p>
+        <p
+          style={{
+            fontFamily: "var(--font-display)",
+            fontSize: "18px",
+            fontWeight: 500,
+            color: "var(--espresso)",
+          }}
+        >
+          {order.customer_first_name} {order.customer_last_name}
+        </p>
+        {order.customer_phone && (
+          <p
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: "13px",
+              color: "var(--espresso-60)",
+            }}
+          >
+            {order.customer_phone}
+          </p>
+        )}
+        {order.customer_email && (
+          <p
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: "13px",
+              color: "var(--espresso-60)",
+            }}
+          >
+            {order.customer_email}
+          </p>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Confetti canvas-confetti
+function fireConfetti() {
+  const defaults = { spread: 80, ticks: 200, gravity: 0.9, decay: 0.94 }
+  confetti({ ...defaults, particleCount: 120, origin: { y: 0.6, x: 0.5 } })
   setTimeout(() => {
-    confetti({
-      ...defaults,
-      particleCount: 80,
-      angle: 60,
-      origin: { y: 0.7, x: 0 },
-    })
+    confetti({ ...defaults, particleCount: 80, angle: 60, origin: { y: 0.7, x: 0 } })
   }, 200)
-
   setTimeout(() => {
-    confetti({
-      ...defaults,
-      particleCount: 80,
-      angle: 120,
-      origin: { y: 0.7, x: 1 },
-    })
+    confetti({ ...defaults, particleCount: 80, angle: 120, origin: { y: 0.7, x: 1 } })
   }, 400)
+}
+
+// Overlay plein écran "C'est prêt !"
+function ReadyOverlay({
+  order,
+  onClose,
+}: {
+  order: Order
+  onClose: () => void
+}) {
+  const orderNum = shortOrderNumber(order.id)
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Commande prête"
+      style={{
+        background:
+          "radial-gradient(ellipse at 50% 40%, #C9842B 0%, #A85A2E 35%, #241E1A 100%)",
+      }}
+    >
+      {/* Bouton fermer */}
+      <button
+        type="button"
+        onClick={onClose}
+        className="absolute top-6 right-6 p-2 rounded-full transition-opacity hover:opacity-70"
+        style={{
+          backgroundColor: "rgba(255,255,255,0.12)",
+          color: "var(--creme-surface)",
+        }}
+        aria-label="Fermer"
+      >
+        <X className="h-5 w-5" />
+      </button>
+
+      {/* Diamants décoratifs en CSS sable */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+        {[
+          { size: 18, top: "8%", left: "12%", rot: 45, opacity: 0.35 },
+          { size: 12, top: "15%", left: "78%", rot: 45, opacity: 0.25 },
+          { size: 22, top: "70%", left: "6%", rot: 45, opacity: 0.2 },
+          { size: 10, top: "75%", left: "88%", rot: 45, opacity: 0.3 },
+          { size: 16, top: "40%", left: "92%", rot: 45, opacity: 0.2 },
+          { size: 8, top: "55%", left: "4%", rot: 45, opacity: 0.25 },
+          { size: 14, top: "88%", left: "55%", rot: 45, opacity: 0.2 },
+          { size: 20, top: "20%", left: "45%", rot: 45, opacity: 0.15 },
+        ].map((d, i) => (
+          <div
+            key={i}
+            className="absolute"
+            style={{
+              width: d.size,
+              height: d.size,
+              top: d.top,
+              left: d.left,
+              transform: `rotate(${d.rot}deg)`,
+              backgroundColor: "var(--sable)",
+              opacity: d.opacity,
+            }}
+          />
+        ))}
+      </div>
+
+      {/* Contenu central */}
+      <div className="relative text-center px-6 max-w-3xl">
+        {/* Titre principal */}
+        <h2
+          style={{
+            fontFamily: "var(--font-display)",
+            fontSize: "clamp(48px, 10vw, 128px)",
+            fontWeight: 500,
+            color: "var(--creme-surface)",
+            lineHeight: 1.05,
+          }}
+        >
+          C'est prêt,{" "}
+          <span style={{ color: "var(--sable)", fontStyle: "italic" }}>
+            {order.customer_first_name}
+          </span>{" "}
+          <span style={{ color: "var(--sable)" }}>!</span>
+        </h2>
+
+        {/* Sous-titre */}
+        <p
+          className="mt-4"
+          style={{
+            fontFamily: "var(--font-sans)",
+            fontSize: "clamp(15px, 2vw, 20px)",
+            color: "rgba(252, 250, 244, 0.75)",
+          }}
+        >
+          Venez récupérer votre commande au comptoir
+        </p>
+
+        {/* Pills numéro de commande + créneau */}
+        <div className="flex flex-wrap items-center justify-center gap-3 mt-8">
+          <span
+            className="px-4 py-2"
+            style={{
+              backgroundColor: "rgba(252, 250, 244, 0.12)",
+              border: "1px solid rgba(201, 166, 107, 0.4)",
+              borderRadius: "var(--radius-pill)",
+              fontFamily: "var(--font-mono)",
+              fontSize: "14px",
+              color: "var(--sable)",
+            }}
+          >
+            #{orderNum}
+          </span>
+          <span
+            className="px-4 py-2"
+            style={{
+              backgroundColor: "rgba(252, 250, 244, 0.12)",
+              border: "1px solid rgba(201, 166, 107, 0.4)",
+              borderRadius: "var(--radius-pill)",
+              fontFamily: "var(--font-mono)",
+              fontSize: "14px",
+              color: "var(--sable)",
+            }}
+          >
+            {order.pickup_time}
+          </span>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export function OrderTracking({ order: initialOrder }: OrderTrackingProps) {
   const [order, setOrder] = useState<Order>(initialOrder)
   const [showReadyOverlay, setShowReadyOverlay] = useState(
-    initialOrder.status === "ready",
+    initialOrder.status === "ready"
   )
   const [celebrated, setCelebrated] = useState(false)
 
@@ -80,7 +551,7 @@ export function OrderTracking({ order: initialOrder }: OrderTrackingProps) {
     fireConfetti()
   }, [celebrated])
 
-  // Fire confetti + overlay when order becomes ready
+  // Déclenche confetti + overlay quand la commande passe à "ready"
   useEffect(() => {
     if (order.status === "ready") {
       setShowReadyOverlay(true)
@@ -88,7 +559,7 @@ export function OrderTracking({ order: initialOrder }: OrderTrackingProps) {
     }
   }, [order.status, celebrate])
 
-  // Supabase Realtime subscription
+  // Abonnement Supabase Realtime — exactement préservé
   useEffect(() => {
     const supabase = createClient()
 
@@ -104,7 +575,7 @@ export function OrderTracking({ order: initialOrder }: OrderTrackingProps) {
         },
         (payload) => {
           setOrder((prev) => ({ ...prev, ...payload.new } as Order))
-        },
+        }
       )
       .subscribe()
 
@@ -113,175 +584,92 @@ export function OrderTracking({ order: initialOrder }: OrderTrackingProps) {
     }
   }, [order.id])
 
+  const orderNum = shortOrderNumber(order.id)
+  const isPickedUp = order.status === "picked_up"
+
+  function handlePrint() {
+    toast("Impression à venir")
+  }
+
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="text-center space-y-2">
-        <h1 className="font-serif text-2xl md:text-3xl font-semibold text-foreground">
-          Suivi de commande
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Commande #{order.id.slice(0, 8)}
-        </p>
-      </div>
-
-      {/* Status timeline */}
-      <div className="bg-card rounded-xl border border-border p-6">
-        <div className="flex items-start justify-between gap-2">
-          {statusSteps.map((step, i) => {
-            const StepIcon = step.icon
-            const state = stepStateFor(order.status, i)
-            const isLast = i === statusSteps.length - 1
-
-            return (
-              <div
-                key={step.key}
-                className="flex-1 flex flex-col items-center min-w-0"
-              >
-                <div className="flex items-center w-full">
-                  {i > 0 && (
-                    <div
-                      className={cn(
-                        "flex-1 h-0.5 transition-colors duration-500",
-                        state !== "pending" ? "bg-accent" : "bg-border",
-                      )}
-                    />
-                  )}
-                  <div
-                    className={cn(
-                      "relative flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all duration-500 shrink-0",
-                      state === "done" &&
-                        "bg-accent border-accent text-accent-foreground",
-                      state === "active" &&
-                        "bg-accent border-accent text-accent-foreground animate-pulse",
-                      state === "pending" &&
-                        "bg-background border-border text-muted-foreground",
-                    )}
-                  >
-                    <StepIcon className="h-5 w-5" />
-                    {state === "active" && (
-                      <span className="absolute inset-0 rounded-full border-2 border-accent animate-ping" />
-                    )}
-                  </div>
-                  {!isLast && (
-                    <div
-                      className={cn(
-                        "flex-1 h-0.5 transition-colors duration-500",
-                        stepStateFor(order.status, i + 1) !== "pending"
-                          ? "bg-accent"
-                          : "bg-border",
-                      )}
-                    />
-                  )}
-                </div>
-                <span
-                  className={cn(
-                    "mt-3 text-xs sm:text-sm font-medium text-center transition-colors",
-                    state === "active"
-                      ? "text-accent"
-                      : state === "done"
-                        ? "text-foreground"
-                        : "text-muted-foreground",
-                  )}
-                >
-                  {step.label}
-                </span>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-
-      {/* Pickup time */}
-      <div className="bg-card rounded-xl border border-border p-6">
-        <div className="flex items-center gap-4">
-          <div className="p-3 rounded-full bg-accent/10">
-            <Clock className="h-6 w-6 text-accent" />
-          </div>
-          <div className="flex-1">
-            <p className="text-sm text-muted-foreground">Creneau de retrait</p>
-            <p className="text-2xl font-serif font-semibold text-foreground tabular-nums">
-              {order.pickup_time}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Order summary */}
-      <div className="bg-card rounded-xl border border-border p-6 space-y-4">
-        <h3 className="font-medium text-foreground">Details de la commande</h3>
-        <div className="space-y-2">
-          {order.items.map((item, idx) => (
-            <div key={idx} className="flex justify-between text-sm">
-              <span className="text-muted-foreground">
-                {item.quantity}x {item.name}
-              </span>
-              <span className="text-foreground tabular-nums">
-                {formatPrice(item.price * item.quantity)}
-              </span>
-            </div>
-          ))}
-        </div>
-        <div className="pt-3 border-t border-border flex justify-between">
-          <span className="font-medium text-foreground">Total</span>
-          <span className="font-semibold text-foreground tabular-nums">
-            {formatPrice(order.total_cents)}
-          </span>
-        </div>
-      </div>
-
-      {/* Customer info */}
-      <div className="bg-card rounded-xl border border-border p-6 space-y-2">
-        <h3 className="font-medium text-foreground">Informations client</h3>
-        <p className="text-sm text-muted-foreground">
-          {order.customer_first_name} {order.customer_last_name}
-        </p>
-        {order.customer_email && (
-          <p className="text-sm text-muted-foreground">{order.customer_email}</p>
-        )}
-        {order.customer_phone && (
-          <p className="text-sm text-muted-foreground">{order.customer_phone}</p>
-        )}
-      </div>
-
-      {/* Fullscreen "ready" overlay */}
-      {showReadyOverlay && order.status === "ready" && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-green-500/95 via-emerald-500/95 to-green-600/95 backdrop-blur-sm animate-in fade-in duration-500"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Commande prete"
-        >
-          <button
-            type="button"
-            onClick={() => setShowReadyOverlay(false)}
-            className="absolute top-6 right-6 p-2 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
-            aria-label="Fermer"
+    <>
+      <div className="space-y-6">
+        {/* ── En-tête ── */}
+        <div>
+          <p
+            style={{
+              fontFamily: "var(--font-mono)",
+              fontSize: "11px",
+              textTransform: "uppercase",
+              letterSpacing: "0.1em",
+              color: "var(--espresso-60)",
+              marginBottom: "8px",
+            }}
           >
-            <X className="h-5 w-5" />
-          </button>
+            Votre commande · {formatOrderDate(order.created_at)}
+          </p>
 
-          <div className="text-center px-6 max-w-lg">
-            <div className="text-7xl sm:text-8xl mb-4 animate-bounce">
-              &#127881;
-            </div>
-            <h2 className="font-serif text-3xl sm:text-5xl font-bold text-white animate-pulse">
-              Votre commande est prete !
-            </h2>
-            <p className="mt-6 text-lg sm:text-xl text-white/95">
-              Venez recuperer votre commande au comptoir
-            </p>
-            <div className="mt-8 inline-block bg-white/20 backdrop-blur-sm rounded-xl px-6 py-4 border border-white/30">
-              <p className="text-sm text-white/80 uppercase tracking-wider">
-                Creneau
-              </p>
-              <p className="text-2xl font-serif font-bold text-white tabular-nums">
-                {order.pickup_time}
-              </p>
-            </div>
-          </div>
+          <h1
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "clamp(36px, 6vw, 64px)",
+              fontWeight: 500,
+              color: "var(--espresso)",
+              lineHeight: 1.05,
+            }}
+          >
+            Commande{" "}
+            <span style={{ color: "var(--terracotta)" }}>#{orderNum}</span>
+          </h1>
+
+          <p
+            className="mt-3 mb-4"
+            style={{
+              fontFamily: "var(--font-sans)",
+              fontSize: "15px",
+              fontStyle: "italic",
+              color: "var(--espresso-60)",
+              maxWidth: "540px",
+            }}
+          >
+            {statusMessage(order.status, order.customer_first_name)}
+          </p>
+
+          <StatusBadge status={order.status} />
         </div>
+
+        {/* ── Stepper ── */}
+        <StepperCard status={order.status} />
+
+        {/* ── Créneau de retrait ── */}
+        <PickupCard pickupTime={order.pickup_time} />
+
+        {/* ── Détails commande ── */}
+        <OrderDetailsCard order={order} />
+
+        {/* ── Bouton "Imprimer le ticket" pour les commandes récupérées ── */}
+        {isPickedUp && (
+          <button
+            onClick={handlePrint}
+            className="flex items-center gap-2 px-5 py-3 rounded-full transition-opacity hover:opacity-70"
+            style={{
+              backgroundColor: "var(--argile)",
+              color: "var(--espresso)",
+              border: "1px solid var(--espresso-20)",
+              fontFamily: "var(--font-sans)",
+              fontSize: "14px",
+            }}
+          >
+            <Printer className="h-4 w-4" />
+            Imprimer le ticket
+          </button>
+        )}
+      </div>
+
+      {/* ── Overlay "C'est prêt !" ── */}
+      {showReadyOverlay && order.status === "ready" && (
+        <ReadyOverlay order={order} onClose={() => setShowReadyOverlay(false)} />
       )}
-    </div>
+    </>
   )
 }

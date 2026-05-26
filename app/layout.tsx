@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next'
-import { Playfair_Display, Inter } from 'next/font/google'
+import { Playfair_Display, Hanken_Grotesk, JetBrains_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { Header } from '@/components/header'
@@ -8,36 +8,46 @@ import { CartSidebar } from '@/components/cart-sidebar'
 import { Toaster } from '@/components/ui/sonner'
 
 const playfair = Playfair_Display({
-  subsets: ["latin"],
+  subsets: ['latin'],
+  weight: ['400', '500', '600', '700'],
+  style: ['normal', 'italic'],
   variable: '--font-serif',
   display: 'swap',
 })
 
-const inter = Inter({
-  subsets: ["latin"],
+const hanken = Hanken_Grotesk({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
   variable: '--font-sans',
   display: 'swap',
 })
 
+const jetbrains = JetBrains_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-mono',
+  display: 'swap',
+})
+
 export const viewport: Viewport = {
-  themeColor: '#5c3a1e',
+  themeColor: '#241E1A',
 }
 
 export const metadata: Metadata = {
-  title: 'SLD Cafe | Click & Collect Toulouse',
-  description: 'Commandez vos viennoiseries, sandwichs et salades en ligne et recuperez-les au SLD Cafe a Toulouse.',
+  title: 'SLD Café | Click & Collect Toulouse',
+  description: 'Commandez vos viennoiseries, sandwichs et salades en ligne et récupérez-les au SLD Café à Toulouse.',
   generator: 'v0.app',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'SLD Cafe',
+    title: 'SLD Café',
   },
   openGraph: {
-    title: 'SLD Cafe | Click & Collect Toulouse',
-    description: 'Commandez vos viennoiseries, sandwichs et salades en ligne et recuperez-les au SLD Cafe a Toulouse.',
+    title: 'SLD Café | Click & Collect Toulouse',
+    description: 'Commandez vos viennoiseries, sandwichs et salades en ligne et récupérez-les au SLD Café à Toulouse.',
     url: 'https://sldcafe.fr',
-    siteName: 'SLD Cafe',
+    siteName: 'SLD Café',
     locale: 'fr_FR',
     type: 'website',
   },
@@ -67,7 +77,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr">
-      <body className={`${playfair.variable} ${inter.variable} font-sans antialiased`}>
+      <body
+        className={`${playfair.variable} ${hanken.variable} ${jetbrains.variable} font-sans antialiased`}
+      >
         <CartProvider>
           <Header />
           <main className="min-h-screen pt-16">

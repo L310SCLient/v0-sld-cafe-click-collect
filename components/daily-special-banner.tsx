@@ -2,6 +2,9 @@ import { createClient } from "@/lib/supabase/server"
 import { formatPrice } from "@/lib/utils"
 import type { DailySpecial, Product } from "@/types"
 
+/* ============================================================
+   HELPERS — untouched business logic
+   ============================================================ */
 function todayStr(): string {
   const d = new Date()
   const y = d.getFullYear()
@@ -13,11 +16,18 @@ function todayStr(): string {
 function nowTimeStr(): string {
   const d = new Date()
   const h = d.getHours().toString().padStart(2, "0")
-  const m = d.getMinutes().toString().padStart(2, "0")
+  const mi = d.getMinutes().toString().padStart(2, "0")
   const s = d.getSeconds().toString().padStart(2, "0")
-  return `${h}:${m}:${s}`
+  return `${h}:${mi}:${s}`
 }
 
+function weekdayFr(): string {
+  return new Date().toLocaleDateString("fr-FR", { weekday: "long" })
+}
+
+/* ============================================================
+   COMPONENT
+   ============================================================ */
 export async function DailySpecialBanner() {
   const supabase = await createClient()
 
@@ -32,7 +42,7 @@ export async function DailySpecialBanner() {
   const special = data as (DailySpecial & { product: Product | null }) | null
   if (!special) return null
 
-  // Custom fields win over the joined product
+  /* Custom fields win over the joined product */
   const name = special.custom_name ?? special.product?.name ?? null
   const price =
     special.custom_price != null
@@ -41,19 +51,63 @@ export async function DailySpecialBanner() {
 
   if (!name || price == null) return null
 
+  const weekday = weekdayFr()
+
   return (
-    <section className="border-y border-[#8B7355]/25">
-      <div className="max-w-6xl mx-auto px-6 sm:px-8 py-4 sm:py-5">
-        <div className="grid grid-cols-3 items-center gap-4">
-          <p className="text-[10px] sm:text-xs uppercase tracking-[0.22em] text-stone-500 font-normal">
-            Suggestion du jour
-          </p>
-          <p className="font-serif text-base sm:text-lg text-stone-900 text-center italic">
-            {name}
-          </p>
-          <p className="text-sm sm:text-base text-stone-700 tabular-nums text-right">
-            {formatPrice(price)}
-          </p>
+    <section
+      className="py-6 sm:py-8"
+      style={{ backgroundColor: "var(--creme-bg)" }}
+    >
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
+        {/* Dark card */}
+        <div
+          className="flex items-center justify-between gap-6 px-6 sm:px-8 py-5 sm:py-6"
+          style={{
+            backgroundColor: "var(--espresso)",
+            borderRadius: "14px",
+            border: "1px solid #C9A66B66",
+            boxShadow: "var(--shadow-md)",
+          }}
+        >
+          {/* Left — label + name + time */}
+          <div className="flex flex-col gap-1 min-w-0">
+            <p
+              className="font-mono text-[10px] uppercase tracking-widest"
+              style={{ color: "var(--sable)" }}
+            >
+              Plat du jour &middot;{" "}
+              <span className="capitalize">{weekday}</span>
+            </p>
+            <p
+              className="font-serif italic leading-snug truncate"
+              style={{
+                fontSize: "22px",
+                color: "var(--creme-surface)",
+              }}
+            >
+              {name}
+            </p>
+            <p
+              className="text-xs"
+              style={{ color: "var(--espresso-60)" }}
+            >
+              jusqu&apos;à 14:30
+            </p>
+          </div>
+
+          {/* Right — price */}
+          <div className="shrink-0">
+            <p
+              className="font-serif font-normal tabular-nums"
+              style={{
+                fontSize: "28px",
+                color: "var(--sable)",
+                lineHeight: 1,
+              }}
+            >
+              {formatPrice(price)}
+            </p>
+          </div>
         </div>
       </div>
     </section>

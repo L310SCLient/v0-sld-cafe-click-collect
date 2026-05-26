@@ -16,18 +16,16 @@ interface ProductCatalogProps {
 
 export function ProductCatalog({ categories }: ProductCatalogProps) {
   return (
-    <div className="space-y-12">
+    <div className="space-y-14">
       {categories.map((category) => (
-        <section key={category.id} id={category.id}>
-          <div className="flex items-center gap-3 mb-4">
-            <span className="text-2xl" role="img" aria-label={category.name}>
-              {category.emoji}
-            </span>
-            <h2 className="font-serif text-xl font-semibold text-foreground">
-              {category.name}
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2">
+        <section key={category.id} id={category.id} className="scroll-mt-36">
+          <h2
+            className="font-[family-name:var(--font-display)] italic font-normal text-[var(--terracotta)] mb-6"
+            style={{ fontSize: "32px" }}
+          >
+            {category.name}
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[14px]">
             {category.products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}

@@ -1,11 +1,12 @@
-import Link from "next/link"
-import { ArrowRight } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { ProductCatalog } from "@/components/product-catalog"
 import { CategoryNav } from "@/components/category-nav"
 import { DailySpecialBanner } from "@/components/daily-special-banner"
 import type { Product } from "@/types"
 
+/* ============================================================
+   CATEGORY CONFIG — unchanged business logic
+   ============================================================ */
 const categoryMeta: Record<string, { name: string; emoji: string }> = {
   viennoiseries: { name: "Viennoiseries", emoji: "\u{1F950}" },
   salades: { name: "Salades", emoji: "\u{1F957}" },
@@ -14,49 +15,21 @@ const categoryMeta: Record<string, { name: string; emoji: string }> = {
   desserts: { name: "Desserts", emoji: "\u{1F36E}" },
 }
 
-const categoryOrder = [
-  "viennoiseries",
-  "salades",
-  "sandwichs",
-  "chaud",
-  "desserts",
-]
+const categoryOrder = ["viennoiseries", "salades", "sandwichs", "chaud", "desserts"]
 
-const facts = [
-  {
-    number: "94",
-    unit: "références",
-    body: "sandwichs, salades, viennoiseries et desserts",
-  },
-  {
-    number: "Chaque",
-    unit: "matin",
-    body: "des produits frais livrés et préparés sur place",
-  },
-  {
-    number: "15",
-    unit: "minutes",
-    body: "le temps moyen entre votre commande et le retrait",
-  },
-]
-
-const reassurance = [
-  "Produits frais du matin",
-  "Prêt en 15 min",
-  "Retrait sans attente",
-  "Lun\u2013Ven 7h\u201319h",
-]
-
+/* ============================================================
+   PAGE
+   ============================================================ */
 export default async function HomePage() {
   const supabase = await createClient()
 
-  // Fetch products
+  /* Fetch products — untouched Supabase logic */
   const { data: products } = await supabase
     .from("products")
     .select("*")
     .order("display_order", { ascending: true })
 
-  // Group by category
+  /* Group by category */
   const grouped = categoryOrder
     .map((catId) => {
       const meta = categoryMeta[catId]
@@ -70,103 +43,305 @@ export default async function HomePage() {
     .filter((c) => c.products.length > 0)
 
   return (
-    <div className="bg-[#FAFAF7] text-stone-900">
+    <div
+      className="text-[var(--espresso)]"
+      style={{ backgroundColor: "var(--creme-bg)" }}
+    >
       {/* ============================================================
-          SECTION 1 — HERO BANNER
+          1. HERO
          ============================================================ */}
-      <section className="relative w-full bg-stone-100 aspect-[16/7] min-h-[380px] sm:min-h-[440px] flex items-center justify-center">
-        <div className="text-center px-6 max-w-2xl">
-          <p className="text-[10px] sm:text-xs uppercase tracking-[0.32em] text-stone-500 font-normal">
-            Toulouse &middot; Sandwicherie artisanale
-          </p>
-
-          <h1 className="mt-8 font-serif text-4xl sm:text-5xl md:text-6xl font-normal leading-[1.1] text-stone-900">
-            SLD Caf&eacute;
-          </h1>
-          <p className="mt-3 font-serif italic text-lg sm:text-xl md:text-2xl text-stone-600 font-light">
-            Le go&ucirc;t du fait maison,
-          </p>
-          <p className="font-serif italic text-lg sm:text-xl md:text-2xl text-stone-600 font-light">
-            &agrave; emporter en quelques clics.
-          </p>
-
-          <div className="mx-auto mt-10 h-px w-16 bg-[#8B7355]/50" />
-
-          <a
-            href="#catalogue"
-            className="mt-8 inline-block text-xs sm:text-sm tracking-[0.18em] uppercase text-stone-700 hover:text-stone-900 transition-colors"
-          >
-            Voir la carte &darr;
-          </a>
-        </div>
-      </section>
-
-      {/* ============================================================
-          SECTION 3 — EDITORIAL INTRO
-         ============================================================ */}
-      <section className="py-20 sm:py-28">
-        <div className="max-w-6xl mx-auto px-6 sm:px-8">
-          <div className="grid md:grid-cols-2 gap-12 md:gap-16 items-center">
-            {/* Text */}
-            <div>
-              <p className="text-[10px] sm:text-xs uppercase tracking-[0.32em] text-stone-500 font-normal">
-                Notre histoire
-              </p>
-              <h2 className="mt-6 font-serif text-2xl sm:text-3xl md:text-4xl font-normal leading-[1.2] text-stone-900">
-                Une sandwicherie qui prend son temps pour que vous n&apos;ayez
-                pas &agrave; attendre.
-              </h2>
-              <p className="mt-6 text-base sm:text-lg text-stone-600 leading-relaxed font-light max-w-md">
-                Chaque matin, notre &eacute;quipe pr&eacute;pare sandwichs,
-                salades et viennoiseries avec des ingr&eacute;dients
-                soigneusement s&eacute;lectionn&eacute;s. Pas de
-                r&eacute;chauff&eacute;, pas de compromis &mdash; juste du
-                bon, pr&ecirc;t &agrave; emporter.
-              </p>
-              <Link
-                href="/histoire"
-                className="mt-8 inline-flex items-center gap-2 text-sm tracking-wide text-stone-900 border-b border-stone-400 hover:border-stone-900 pb-0.5 transition-colors"
+      <section
+        className="relative w-full min-h-screen flex items-center"
+        style={{ backgroundColor: "var(--creme-bg)" }}
+      >
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 w-full py-24 lg:py-0">
+          <div className="grid lg:grid-cols-2 gap-16 lg:gap-20 items-center">
+            {/* ---- Text column ---- */}
+            <div className="flex flex-col">
+              {/* Eyebrow */}
+              <p
+                className="font-mono text-[10px] uppercase tracking-widest"
+                style={{ color: "var(--espresso-60)" }}
               >
-                En savoir plus
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
+                Sandwicherie artisanale &middot; Toulouse
+              </p>
+
+              {/* Main heading */}
+              <h1
+                className="mt-6 font-serif font-normal leading-[1.05]"
+                style={{
+                  fontSize: "clamp(44px, 7vw, 88px)",
+                  color: "var(--espresso)",
+                }}
+              >
+                Pain chaud,
+                <br />
+                <em style={{ color: "var(--terracotta)" }}>
+                  main d&apos;artisan.
+                </em>
+              </h1>
+
+              {/* Descriptor */}
+              <p
+                className="mt-6 font-serif italic text-lg sm:text-xl leading-relaxed max-w-md"
+                style={{ color: "var(--espresso-60)" }}
+              >
+                Sandwicherie de comptoir, rue des Filatiers &mdash; chaque
+                pain sort du four, chaque garniture est montée à la commande.
+              </p>
+
+              {/* CTA */}
+              <div className="mt-10">
+                <a
+                  href="#catalogue"
+                  className="inline-flex items-center gap-2 px-8 py-4 text-sm font-medium tracking-wide text-white transition-colors"
+                  style={{
+                    backgroundColor: "var(--terracotta)",
+                    borderRadius: "var(--radius-pill)",
+                  }}
+                  onMouseOver={(e) =>
+                    ((e.currentTarget as HTMLAnchorElement).style.backgroundColor =
+                      "var(--terracotta-hover)")
+                  }
+                  onMouseOut={(e) =>
+                    ((e.currentTarget as HTMLAnchorElement).style.backgroundColor =
+                      "var(--terracotta)")
+                  }
+                >
+                  Commander pour midi &rarr;
+                </a>
+              </div>
+
+              {/* Time markers */}
+              <div className="mt-12 flex flex-col sm:flex-row gap-6 sm:gap-10">
+                {[
+                  { time: "07:30", label: "Première fournée" },
+                  { time: "11:30", label: "Service midi" },
+                  { time: "16:00", label: "Dernier sandwich" },
+                ].map(({ time, label }) => (
+                  <div key={time} className="flex items-start gap-3">
+                    <span
+                      className="font-mono text-sm font-medium tabular-nums leading-none pt-0.5"
+                      style={{ color: "var(--sable)" }}
+                    >
+                      {time}
+                    </span>
+                    <span
+                      className="text-sm leading-none"
+                      style={{ color: "var(--espresso-60)" }}
+                    >
+                      {label}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
 
-            {/* Visual */}
-            <div>
-              <div className="aspect-square w-full rounded-2xl bg-stone-100 overflow-hidden relative">
-                <div
-                  className="absolute inset-0 bg-[radial-gradient(circle_at_30%_30%,rgba(139,115,85,0.12),transparent_60%)]"
-                  aria-hidden="true"
-                />
+            {/* ---- Photo column ---- */}
+            <div className="relative hidden lg:block">
+              {/* Main photo placeholder */}
+              <div
+                className="sld-photo w-full aspect-[4/5] rounded-[var(--radius-lg)]"
+                style={{ boxShadow: "var(--shadow-lg)" }}
+                aria-hidden="true"
+              />
+
+              {/* Floating "Plat du jour" card */}
+              <div
+                className="absolute bottom-8 left-[-2.5rem] flex items-center gap-4 px-5 py-4 rounded-[14px]"
+                style={{
+                  backgroundColor: "var(--espresso)",
+                  boxShadow: "var(--shadow-md)",
+                  border: "1px solid #C9A66B66",
+                  minWidth: "220px",
+                }}
+              >
+                <div>
+                  <p
+                    className="font-mono text-[9px] uppercase tracking-widest"
+                    style={{ color: "var(--sable)" }}
+                  >
+                    Plat du jour
+                  </p>
+                  <p
+                    className="mt-1 font-serif italic text-base leading-snug"
+                    style={{ color: "var(--creme-surface)" }}
+                  >
+                    Tartine jambon-beurre
+                  </p>
+                  <p
+                    className="mt-0.5 font-serif text-base font-medium"
+                    style={{ color: "var(--sable)" }}
+                  >
+                    6,90 €
+                  </p>
+                </div>
               </div>
-              <p className="mt-4 text-xs sm:text-sm text-stone-500 text-center italic font-light">
-                Pr&eacute;paration quotidienne en boutique
-              </p>
             </div>
           </div>
         </div>
       </section>
 
       {/* ============================================================
-          SECTION 4 — 3 FACTS
+          2. HISTOIRE + STATS
          ============================================================ */}
-      <section className="pb-20 sm:pb-28">
-        <div className="max-w-5xl mx-auto px-6 sm:px-8">
-          <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-stone-200">
-            {facts.map((f) => (
-              <div
-                key={f.unit}
-                className="px-6 py-8 sm:py-4 text-center space-y-2"
+      <section
+        className="py-24 sm:py-32"
+        style={{ backgroundColor: "var(--creme-surface)" }}
+      >
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
+          <div className="grid lg:grid-cols-2 gap-16 lg:gap-20 items-start">
+            {/* Photo placeholder */}
+            <div
+              className="sld-photo w-full aspect-square rounded-[var(--radius-lg)]"
+              style={{ boxShadow: "var(--shadow-md)" }}
+              aria-hidden="true"
+            />
+
+            {/* Text + Stats */}
+            <div className="flex flex-col justify-center">
+              <p
+                className="text-sm"
+                style={{ color: "var(--espresso-60)" }}
               >
-                <p className="font-serif text-4xl sm:text-5xl font-normal text-stone-900 leading-none">
-                  {f.number}
+                &mdash; Notre histoire
+              </p>
+
+              <h2
+                className="mt-5 font-serif font-normal leading-[1.15] text-3xl sm:text-4xl"
+                style={{ color: "var(--espresso)" }}
+              >
+                Une boulangerie qui s&apos;est mise à faire le déjeuner.
+              </h2>
+
+              <p
+                className="mt-6 text-base leading-relaxed max-w-md"
+                style={{ color: "var(--espresso-60)" }}
+              >
+                Ce qui a commencé comme une fournée du matin est devenu une
+                carte du midi entière. Des ingrédients régionaux, une main
+                appliquée, et l&apos;envie de vous nourrir vraiment — sans
+                chichi et sans attente.
+              </p>
+
+              {/* Dark stats block */}
+              <div
+                className="mt-10 rounded-[var(--radius-md)] p-8"
+                style={{
+                  backgroundColor: "var(--espresso)",
+                  boxShadow: "var(--shadow-sm)",
+                }}
+              >
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
+                  {[
+                    { value: "12", label: "ans d'histoire" },
+                    { value: "94", label: "références" },
+                    { value: "+800", label: "clients / sem." },
+                    { value: "1", label: "fournil" },
+                  ].map(({ value, label }) => (
+                    <div key={label} className="text-center">
+                      <p
+                        className="font-serif text-3xl sm:text-4xl font-normal leading-none"
+                        style={{ color: "var(--sable)" }}
+                      >
+                        {value}
+                      </p>
+                      <p
+                        className="mt-2 font-mono text-[10px] uppercase tracking-widest leading-snug"
+                        style={{ color: "var(--espresso-60)" }}
+                      >
+                        {label}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ============================================================
+          3. CTA CENTERED
+         ============================================================ */}
+      <section
+        className="py-24 sm:py-32"
+        style={{ backgroundColor: "var(--argile)" }}
+      >
+        <div className="max-w-3xl mx-auto px-6 sm:px-8 text-center">
+          <h2
+            className="font-serif font-normal leading-[1.15] text-3xl sm:text-4xl md:text-5xl"
+            style={{ color: "var(--espresso)" }}
+          >
+            On garde un sandwich{" "}
+            <em style={{ color: "var(--terracotta)" }}>au chaud.</em>
+          </h2>
+
+          <div className="mt-10">
+            <a
+              href="#catalogue"
+              className="inline-flex items-center gap-2 px-8 py-4 text-sm font-medium tracking-wide text-white transition-colors"
+              style={{
+                backgroundColor: "var(--terracotta)",
+                borderRadius: "var(--radius-pill)",
+              }}
+              onMouseOver={(e) =>
+                ((e.currentTarget as HTMLAnchorElement).style.backgroundColor =
+                  "var(--terracotta-hover)")
+              }
+              onMouseOut={(e) =>
+                ((e.currentTarget as HTMLAnchorElement).style.backgroundColor =
+                  "var(--terracotta)")
+              }
+            >
+              Voir la carte du jour &rarr;
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* ============================================================
+          4. RÉASSURANCE
+         ============================================================ */}
+      <section
+        className="py-16 sm:py-20 border-t border-b"
+        style={{
+          backgroundColor: "var(--creme-bg)",
+          borderColor: "var(--espresso-20)",
+        }}
+      >
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-10">
+            {[
+              {
+                title: "Pétri à 5h",
+                desc: "Le pain sort du four avant que vous vous réveilliez.",
+              },
+              {
+                title: "Garni à la commande",
+                desc: "Chaque sandwich est assemblé au moment de votre commande.",
+              },
+              {
+                title: "Produits régionaux",
+                desc: "Charcuterie, fromages et légumes sourcés en Occitanie.",
+              },
+              {
+                title: "Retrait sans attente",
+                desc: "Votre commande est prête en 15 minutes, pas une de plus.",
+              },
+            ].map(({ title, desc }) => (
+              <div key={title}>
+                <p
+                  className="font-serif italic text-lg"
+                  style={{ color: "var(--espresso)" }}
+                >
+                  {title}
                 </p>
-                <p className="text-xs uppercase tracking-[0.22em] text-stone-500">
-                  {f.unit}
-                </p>
-                <p className="text-sm text-stone-600 font-light max-w-[14rem] mx-auto leading-snug pt-1">
-                  {f.body}
+                <p
+                  className="mt-2 text-sm leading-relaxed"
+                  style={{ color: "var(--espresso-60)" }}
+                >
+                  {desc}
                 </p>
               </div>
             ))}
@@ -175,47 +350,34 @@ export default async function HomePage() {
       </section>
 
       {/* ============================================================
-          SECTION 5 — CTA COMMANDER
-         ============================================================ */}
-      <section className="bg-stone-900 text-white">
-        <div className="max-w-3xl mx-auto px-6 sm:px-8 py-20 sm:py-28 text-center">
-          <p className="text-[10px] sm:text-xs uppercase tracking-[0.32em] text-amber-200/80 font-normal">
-            Click &amp; Collect
-          </p>
-          <h2 className="mt-6 font-serif text-3xl sm:text-4xl md:text-5xl font-normal leading-[1.15] text-white">
-            Pr&ecirc;t &agrave; commander&nbsp;?
-          </h2>
-          <p className="mt-6 text-base sm:text-lg text-white/70 font-light leading-relaxed max-w-xl mx-auto">
-            Choisissez vos plats, s&eacute;lectionnez votre cr&eacute;neau de
-            retrait, et r&eacute;cup&eacute;rez votre commande au comptoir
-            sans attendre.
-          </p>
-          <a
-            href="#catalogue"
-            className="mt-10 inline-flex items-center gap-2 px-8 py-4 rounded-full bg-amber-500 hover:bg-amber-400 text-stone-950 text-sm sm:text-base font-medium tracking-wide transition-colors"
-          >
-            Commander maintenant
-            <ArrowRight className="h-4 w-4" />
-          </a>
-        </div>
-      </section>
-
-      {/* ============================================================
-          SECTION 6 — DAILY SPECIAL BANNER
+          5. DAILY SPECIAL BANNER
          ============================================================ */}
       <DailySpecialBanner />
 
       {/* ============================================================
-          SECTION 7 — CATALOGUE
+          6. CATALOGUE
          ============================================================ */}
-      <section id="catalogue" className="scroll-mt-20">
-        <div className="max-w-6xl mx-auto px-6 sm:px-8 pt-20 sm:pt-24">
+      <section
+        id="catalogue"
+        className="scroll-mt-20"
+        style={{ backgroundColor: "var(--creme-bg)" }}
+      >
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 pt-20 sm:pt-24">
           <div className="text-center">
-            <p className="text-[10px] sm:text-xs uppercase tracking-[0.32em] text-stone-500 font-normal">
-              Notre carte
-            </p>
-            <p className="mt-4 font-serif italic text-lg sm:text-xl text-stone-600 font-light">
-              Commandez en ligne, r&eacute;cup&eacute;rez en boutique
+            <h2
+              className="font-serif font-normal leading-tight"
+              style={{
+                fontSize: "clamp(40px, 5vw, 64px)",
+                color: "var(--espresso)",
+              }}
+            >
+              La carte du jour
+            </h2>
+            <p
+              className="mt-4 font-serif italic text-lg"
+              style={{ color: "var(--espresso-60)" }}
+            >
+              Commandez en ligne, récupérez en boutique
             </p>
           </div>
         </div>
@@ -224,83 +386,163 @@ export default async function HomePage() {
           <CategoryNav />
         </div>
 
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 pb-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 pb-24">
           <ProductCatalog categories={grouped} />
         </div>
       </section>
 
       {/* ============================================================
-          SECTION 8 — REASSURANCE STRIP
+          7. FOOTER
          ============================================================ */}
-      <section className="bg-stone-50 border-y border-stone-200">
-        <div className="max-w-6xl mx-auto px-6 sm:px-8 py-5">
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs sm:text-sm text-stone-600">
-            {reassurance.map((item, i) => (
-              <span
-                key={item}
-                className="inline-flex items-center gap-1.5 font-light"
+      <footer
+        style={{
+          backgroundColor: "var(--espresso)",
+          color: "var(--creme-surface)",
+        }}
+      >
+        {/* Main footer columns */}
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 pt-16 pb-10">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
+            {/* Brand */}
+            <div>
+              <div className="flex items-baseline gap-0.5">
+                <span
+                  className="font-serif text-3xl font-normal leading-none"
+                  style={{ color: "var(--creme-surface)" }}
+                >
+                  SLD
+                </span>
+                <span
+                  className="font-serif italic text-3xl"
+                  style={{ color: "var(--terracotta)" }}
+                >
+                  .
+                </span>
+                <span
+                  className="font-mono text-xs uppercase tracking-widest ml-1"
+                  style={{ color: "var(--espresso-60)" }}
+                >
+                  Café
+                </span>
+              </div>
+              <p
+                className="mt-4 text-sm leading-relaxed max-w-[18rem]"
+                style={{ color: "var(--espresso-60)" }}
               >
-                <span className="text-amber-700">&#10003;</span>
-                <span>{item}</span>
-                {i < reassurance.length - 1 && (
-                  <span
-                    className="ml-4 text-stone-300"
-                    aria-hidden="true"
-                  >
-                    &middot;
-                  </span>
-                )}
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ============================================================
-          FOOTER
-         ============================================================ */}
-      <footer className="bg-white border-t border-stone-200">
-        <div className="max-w-6xl mx-auto px-6 sm:px-8 py-10">
-          <div className="grid md:grid-cols-3 items-center gap-6">
-            {/* Logo */}
-            <div className="text-center md:text-left">
-              <span className="font-serif text-2xl font-normal text-stone-900">
-                SLD Caf&eacute;
-              </span>
+                Sandwicherie artisanale depuis 2012. Pain frais chaque matin,
+                garnitures faites à la commande.
+              </p>
             </div>
 
-            {/* Nav */}
-            <nav className="flex items-center justify-center gap-6 text-sm text-stone-600">
-              <Link
-                href="/histoire"
-                className="hover:text-stone-900 transition-colors"
+            {/* Horaires */}
+            <div>
+              <p
+                className="font-mono text-[10px] uppercase tracking-widest mb-4"
+                style={{ color: "var(--sable)" }}
               >
-                Histoire
-              </Link>
-              <Link
-                href="/contact"
-                className="hover:text-stone-900 transition-colors"
+                Horaires
+              </p>
+              <ul className="space-y-2 text-sm" style={{ color: "var(--espresso-60)" }}>
+                <li className="flex justify-between gap-6">
+                  <span>Lundi &ndash; Vendredi</span>
+                  <span className="tabular-nums">7h &ndash; 19h</span>
+                </li>
+                <li className="flex justify-between gap-6">
+                  <span>Samedi</span>
+                  <span className="tabular-nums">8h &ndash; 17h</span>
+                </li>
+                <li className="flex justify-between gap-6">
+                  <span>Dimanche</span>
+                  <span>Fermé</span>
+                </li>
+              </ul>
+            </div>
+
+            {/* Adresse */}
+            <div>
+              <p
+                className="font-mono text-[10px] uppercase tracking-widest mb-4"
+                style={{ color: "var(--sable)" }}
+              >
+                Adresse
+              </p>
+              <address
+                className="not-italic text-sm space-y-1 leading-relaxed"
+                style={{ color: "var(--espresso-60)" }}
+              >
+                <p>Rue des Filatiers</p>
+                <p>31000 Toulouse</p>
+                <p className="mt-3">
+                  <a
+                    href="https://maps.google.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline underline-offset-2 transition-opacity hover:opacity-70"
+                  >
+                    Voir sur la carte &rarr;
+                  </a>
+                </p>
+              </address>
+            </div>
+
+            {/* Contact */}
+            <div>
+              <p
+                className="font-mono text-[10px] uppercase tracking-widest mb-4"
+                style={{ color: "var(--sable)" }}
               >
                 Contact
-              </Link>
-              <a
-                href="#catalogue"
-                className="hover:text-stone-900 transition-colors"
-              >
-                Commander
-              </a>
-            </nav>
-
-            {/* Hours */}
-            <p className="text-sm text-stone-600 font-light text-center md:text-right">
-              Lun&ndash;Ven 7h&ndash;19h &middot; Samedi 8h&ndash;17h
-            </p>
+              </p>
+              <ul className="space-y-2 text-sm" style={{ color: "var(--espresso-60)" }}>
+                <li>
+                  <a
+                    href="tel:+33512345678"
+                    className="underline underline-offset-2 transition-opacity hover:opacity-70"
+                  >
+                    05 12 34 56 78
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="mailto:bonjour@sldcafe.fr"
+                    className="underline underline-offset-2 transition-opacity hover:opacity-70"
+                  >
+                    bonjour@sldcafe.fr
+                  </a>
+                </li>
+              </ul>
+            </div>
           </div>
+        </div>
 
-          <div className="mt-8 pt-6 border-t border-stone-200 text-center">
-            <p className="text-xs text-stone-400">
-              &copy; 2025 SLD Caf&eacute; &middot; Toulouse
+        {/* Bottom bar */}
+        <div
+          className="border-t"
+          style={{ borderColor: "var(--espresso-20)" }}
+        >
+          <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <p
+              className="text-xs"
+              style={{ color: "var(--espresso-60)" }}
+            >
+              &copy; {new Date().getFullYear()} SLD Café &middot; Toulouse
             </p>
+            <nav className="flex items-center gap-6">
+              {[
+                { label: "Mentions légales", href: "/mentions-legales" },
+                { label: "CGV", href: "/cgv" },
+                { label: "Confidentialité", href: "/confidentialite" },
+              ].map(({ label, href }) => (
+                <a
+                  key={href}
+                  href={href}
+                  className="text-xs underline-offset-2 transition-opacity hover:opacity-70"
+                  style={{ color: "var(--espresso-60)" }}
+                >
+                  {label}
+                </a>
+              ))}
+            </nav>
           </div>
         </div>
       </footer>

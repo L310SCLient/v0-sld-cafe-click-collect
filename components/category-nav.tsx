@@ -3,19 +3,32 @@
 import { useState, useEffect, useRef } from "react"
 import { cn } from "@/lib/utils"
 
-const categories = [
-  { id: "viennoiseries", name: "Viennoiseries", emoji: "\u{1F950}" },
-  { id: "salades", name: "Salades", emoji: "\u{1F957}" },
-  { id: "sandwichs", name: "Sandwichs", emoji: "\u{1F959}" },
-  { id: "chaud", name: "Chaud", emoji: "\u{1FAD5}" },
-  { id: "desserts", name: "Desserts", emoji: "\u{1F36E}" },
+const defaultCategories = [
+  { id: "viennoiseries", name: "Viennoiseries", count: 0 },
+  { id: "salades", name: "Salades", count: 0 },
+  { id: "sandwichs", name: "Sandwichs", count: 0 },
+  { id: "chaud", name: "Chaud", count: 0 },
+  { id: "desserts", name: "Desserts", count: 0 },
 ]
 
-export function CategoryNav() {
-  const [activeId, setActiveId] = useState<string>(categories[0].id)
+interface NavCategory {
+  id: string
+  name: string
+  count?: number
+}
+
+interface CategoryNavProps {
+  categories?: NavCategory[]
+}
+
+export function CategoryNav({ categories }: CategoryNavProps) {
+  const navCategories = categories ?? defaultCategories
+  const [activeId, setActiveId] = useState<string>(navCategories[0]?.id ?? "")
   const observerRef = useRef<IntersectionObserver | null>(null)
 
   useEffect(() => {
+    if (navCategories.length === 0) return
+
     observerRef.current = new IntersectionObserver(
       (entries) => {
         // Find the entry closest to the top that is intersecting
@@ -33,13 +46,14 @@ export function CategoryNav() {
       }
     )
 
-    categories.forEach(({ id }) => {
+    navCategories.forEach(({ id }) => {
       const el = document.getElementById(id)
       if (el) observerRef.current?.observe(el)
     })
 
     return () => observerRef.current?.disconnect()
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [navCategories.map((c) => c.id).join(",")])
 
   const scrollToCategory = (id: string) => {
     const element = document.getElementById(id)
@@ -51,25 +65,46 @@ export function CategoryNav() {
   }
 
   return (
-    <nav className="sticky top-16 z-30 bg-background/95 backdrop-blur-sm border-b border-border">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-2 py-3 overflow-x-auto scrollbar-hide">
-          {categories.map((category) => (
+    <nav className="sticky top-16 z-30 py-3 px-4 sm:px-6 lg:px-8">
+      <div
+        className="flex items-center gap-1 overflow-x-auto scrollbar-hide w-fit max-w-full rounded-[var(--radius-pill)] bg-[var(--argile)]"
+        style={{ padding: "6px" }}
+      >
+        {navCategories.map((category) => {
+          const isActive = activeId === category.id
+          return (
             <button
               key={category.id}
               onClick={() => scrollToCategory(category.id)}
               className={cn(
-                "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors",
-                activeId === category.id
-                  ? "bg-accent text-accent-foreground"
-                  : "bg-secondary hover:bg-border text-foreground"
+                "flex items-center whitespace-nowrap rounded-[var(--radius-pill)] transition-all duration-200",
+                "font-[family-name:var(--font-sans)] text-sm font-medium",
+                isActive
+                  ? "bg-[var(--creme-surface)] text-[var(--espresso)] shadow-[var(--shadow-xs)]"
+                  : "text-[var(--espresso-80)] hover:text-[var(--espresso)]"
               )}
+              style={{ padding: "9px 18px" }}
             >
-              <span>{category.emoji}</span>
-              <span className="hidden sm:inline">{category.name}</span>
+              <span>{category.name}</span>
+              {category.count !== undefined && category.count > 0 && (
+                <span
+                  className={cn(
+                    "font-[family-name:var(--font-mono)]",
+                    isActive
+                      ? "text-[var(--terracotta)]"
+                      : "text-[var(--espresso-60)]"
+                  )}
+                  style={{
+                    fontSize: "10px",
+                    marginLeft: "6px",
+                  }}
+                >
+                  {category.count}
+                </span>
+              )}
             </button>
-          ))}
-        </div>
+          )
+        })}
       </div>
     </nav>
   )

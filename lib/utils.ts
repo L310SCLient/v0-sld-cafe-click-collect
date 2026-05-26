@@ -25,3 +25,23 @@ export function getTimeSlots(start: string, end: string, interval: number): stri
   }
   return slots
 }
+
+/**
+ * Returns a human-readable relative time string in French.
+ * Handles timezone correctly by comparing UTC timestamps directly.
+ */
+export function timeAgo(dateStr: string): string {
+  const now = Date.now()
+  // Date.parse handles ISO strings with timezone info correctly
+  const then = Date.parse(dateStr)
+  if (isNaN(then)) return ''
+  const diffMs = now - then
+  if (diffMs < 0) return "à l'instant"
+  const diffMin = Math.floor(diffMs / 60_000)
+  if (diffMin < 1) return "à l'instant"
+  if (diffMin < 60) return `il y a ${diffMin} min`
+  const diffH = Math.floor(diffMin / 60)
+  if (diffH < 24) return `il y a ${diffH}h`
+  const diffD = Math.floor(diffH / 24)
+  return `il y a ${diffD}j`
+}

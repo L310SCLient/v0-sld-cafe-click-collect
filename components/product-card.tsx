@@ -3,15 +3,21 @@
 import { useState } from "react"
 import { Plus, Check } from "lucide-react"
 import { useCart } from "./cart-provider"
-import { formatPrice } from "@/lib/utils"
 import { cn } from "@/lib/utils"
 import type { Product } from "@/types"
 
 interface ProductCardProps {
   product: Product
+  categoryLabel?: string
 }
 
-export function ProductCard({ product }: ProductCardProps) {
+function formatPriceLocal(cents: number): string {
+  const euros = Math.floor(cents / 100)
+  const centsPart = cents % 100
+  return `${euros},${centsPart.toString().padStart(2, "0")} €`
+}
+
+export function ProductCard({ product, categoryLabel }: ProductCardProps) {
   const { addItem } = useCart()
   const [added, setAdded] = useState(false)
 
@@ -30,44 +36,78 @@ export function ProductCard({ product }: ProductCardProps) {
   return (
     <div
       className={cn(
-        "group relative flex items-center justify-between py-3 px-4 rounded-lg bg-card border border-transparent transition-colors",
-        product.available
-          ? "hover:bg-secondary/50 hover:border-border"
-          : "opacity-60"
+        "group relative flex flex-col rounded-[var(--radius-md)] bg-[var(--creme-surface)]",
+        "border border-transparent shadow-[var(--shadow-xs)]",
+        "transition-all duration-200",
+        "hover:border-[var(--sable-soft)] hover:shadow-[var(--shadow-sm)]",
+        !product.available && "opacity-55"
       )}
+      style={{ padding: "14px 16px" }}
     >
-      {!product.available && (
-        <span className="absolute top-1 right-1 text-[10px] font-medium uppercase tracking-wider bg-muted text-muted-foreground px-2 py-0.5 rounded-full">
-          Indisponible
-        </span>
-      )}
-      <div className="flex-1 min-w-0">
-        <h3 className="text-sm font-medium text-card-foreground truncate">
-          {product.name}
-        </h3>
-      </div>
-      <div className="flex items-center gap-3 ml-4">
-        <span className="text-sm font-semibold text-foreground whitespace-nowrap">
-          {formatPrice(product.price)}
-        </span>
-        <button
-          onClick={handleAdd}
-          disabled={!product.available}
-          className={cn(
-            "flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200",
-            added
-              ? "bg-green-500 text-white scale-110"
-              : "bg-primary text-primary-foreground hover:bg-accent",
-            !product.available && "cursor-not-allowed opacity-40"
-          )}
-          aria-label={`Ajouter ${product.name} au panier`}
+      {/* Category label */}
+      {categoryLabel && (
+        <p
+          className="font-[family-name:var(--font-mono)] uppercase text-[var(--espresso-60)]"
+          style={{
+            fontSize: "10px",
+            letterSpacing: "0.14em",
+            marginBottom: "6px",
+          }}
         >
-          {added ? (
-            <Check className="h-4 w-4" />
-          ) : (
-            <Plus className="h-4 w-4" />
-          )}
-        </button>
+          {categoryLabel}
+        </p>
+      )}
+
+      {/* Product name */}
+      <h3
+        className="font-[family-name:var(--font-display)] font-medium text-[var(--espresso)] leading-snug flex-1"
+        style={{ fontSize: "18px" }}
+      >
+        {product.name}
+      </h3>
+
+      {/* Footer: price + action */}
+      <div
+        className="flex items-center justify-between"
+        style={{
+          borderTop: "1px solid var(--espresso-08)",
+          marginTop: "4px",
+          paddingTop: "10px",
+        }}
+      >
+        <span
+          className="font-[family-name:var(--font-display)] font-medium text-[var(--espresso)]"
+          style={{ fontSize: "18px" }}
+        >
+          {formatPriceLocal(product.price)}
+        </span>
+
+        {product.available ? (
+          <button
+            onClick={handleAdd}
+            aria-label={`Ajouter ${product.name} au panier`}
+            className={cn(
+              "flex items-center justify-center rounded-full transition-all duration-200",
+              "bg-[var(--terracotta)] text-white",
+              "hover:bg-[var(--terracotta-hover)] hover:scale-[1.06]",
+              added && "bg-green-600 scale-[1.06]"
+            )}
+            style={{ width: "32px", height: "32px", flexShrink: 0 }}
+          >
+            {added ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              <Plus className="h-4 w-4" />
+            )}
+          </button>
+        ) : (
+          <span
+            className="font-[family-name:var(--font-mono)] uppercase text-[var(--espresso-60)]"
+            style={{ fontSize: "10px", letterSpacing: "0.12em" }}
+          >
+            épuisé
+          </span>
+        )}
       </div>
     </div>
   )

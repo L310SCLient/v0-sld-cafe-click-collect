@@ -20,12 +20,15 @@ export default async function AdminAuthenticatedLayout({
     .eq('status', 'pending')
 
   return (
-    <div className="min-h-screen bg-stone-50">
+    <div
+      className="min-h-screen"
+      style={{ backgroundColor: 'var(--creme-bg)' }}
+    >
       <AdminNav pendingCount={count ?? 0} />
 
-      {/* Main content */}
-      <main className="lg:pl-64 pb-20 lg:pb-0">
-        <div className="p-4 sm:p-6 lg:p-8">
+      {/* Main content — offset by 240px sidebar on desktop */}
+      <main className="lg:pl-60 pb-20 lg:pb-0">
+        <div className="p-5 sm:p-7 lg:p-9">
           {children}
         </div>
       </main>

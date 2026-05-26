@@ -3,6 +3,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { OrdersBoard } from '@/components/admin/orders-board'
 import { DashboardStats } from '@/components/admin/dashboard-stats'
 import type { Order } from '@/types'
+import { Bell, Plus, Store } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,6 +18,15 @@ function getPeriodBoundaries(now: Date = new Date()) {
   )
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
   return { startOfDay, startOfWeek, startOfMonth }
+}
+
+function formatServiceDate(): string {
+  const now = new Date()
+  return now.toLocaleDateString('fr-FR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  })
 }
 
 export default async function CommandesPage() {
@@ -61,16 +71,144 @@ export default async function CommandesPage() {
     if (createdAt >= startOfDay) dayOrderCount += 1
   }
 
+  const serviceDate = formatServiceDate()
+
   return (
     <div>
-      <h1 className="text-2xl font-serif font-semibold mb-6">Commandes</h1>
+      {/* Page header */}
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <p
+            className="mb-1 capitalize"
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '11px',
+              color: 'var(--espresso-60)',
+              letterSpacing: '0.06em',
+            }}
+          >
+            {serviceDate} · service midi
+          </p>
+          <h1
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '40px',
+              fontWeight: 500,
+              color: 'var(--espresso)',
+              lineHeight: 1.1,
+            }}
+          >
+            Commandes du jour
+          </h1>
+        </div>
+
+        <div className="flex items-center gap-2 mt-2">
+          {/* Boutique ouverte indicator */}
+          <div
+            className="flex items-center gap-2 px-3 py-2 rounded-lg"
+            style={{
+              backgroundColor: 'var(--creme-surface)',
+              border: '1px solid var(--sable-soft)',
+              boxShadow: 'var(--shadow-xs)',
+            }}
+          >
+            <Store
+              className="h-4 w-4"
+              style={{ color: 'var(--status-ready)' }}
+            />
+            <span
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '12px',
+                color: 'var(--espresso)',
+              }}
+            >
+              Boutique ouverte
+            </span>
+          </div>
+
+          {/* Notifications */}
+          <button
+            className="w-9 h-9 flex items-center justify-center rounded-lg transition-colors"
+            style={{
+              backgroundColor: 'var(--creme-surface)',
+              border: '1px solid var(--sable-soft)',
+              boxShadow: 'var(--shadow-xs)',
+              color: 'var(--espresso-60)',
+            }}
+            aria-label="Notifications"
+          >
+            <Bell className="h-4 w-4" />
+          </button>
+
+          {/* Manual order */}
+          <button
+            className="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors"
+            style={{
+              backgroundColor: 'var(--terracotta)',
+              color: '#ffffff',
+              fontFamily: 'var(--font-mono)',
+              fontSize: '12px',
+              fontWeight: 500,
+              boxShadow: 'var(--shadow-xs)',
+            }}
+            onMouseOver={(e) => {
+              (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--terracotta-hover)'
+            }}
+            onMouseOut={(e) => {
+              (e.currentTarget as HTMLElement).style.backgroundColor = 'var(--terracotta)'
+            }}
+          >
+            <Plus className="h-4 w-4" />
+            Commande manuelle
+          </button>
+        </div>
+      </div>
+
+      {/* Stats */}
       <DashboardStats
         dayOrderCount={dayOrderCount}
         dayRevenueCents={dayRevenueCents}
         weekRevenueCents={weekRevenueCents}
         monthRevenueCents={monthRevenueCents}
       />
-      <OrdersBoard initialOrders={(orders as Order[]) ?? []} />
+
+      {/* Kanban section */}
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2
+            style={{
+              fontFamily: 'var(--font-display)',
+              fontSize: '20px',
+              fontWeight: 500,
+              color: 'var(--espresso)',
+            }}
+          >
+            Tableau du service
+          </h2>
+
+          {/* Filter dropdown placeholder */}
+          <select
+            className="px-3 py-1.5 rounded-lg appearance-none"
+            style={{
+              fontFamily: 'var(--font-mono)',
+              fontSize: '12px',
+              backgroundColor: 'var(--creme-surface)',
+              border: '1px solid var(--espresso-20)',
+              color: 'var(--espresso)',
+              boxShadow: 'var(--shadow-xs)',
+            }}
+          >
+            <option>Tous les statuts</option>
+            <option>En attente</option>
+            <option>En préparation</option>
+            <option>Prête</option>
+            <option>Récupérée</option>
+          </select>
+        </div>
+
+        <OrdersBoard initialOrders={(orders as Order[]) ?? []} />
+      </div>
     </div>
   )
 }

@@ -22,8 +22,14 @@ export default async function SuiviPage({ params }: SuiviPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20">
+    <div
+      className="min-h-screen"
+      style={{ backgroundColor: "var(--creme-bg)" }}
+    >
+      <div
+        className="mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-20"
+        style={{ maxWidth: "1100px" }}
+      >
         <OrderTracking order={order as Order} />
       </div>
     </div>
