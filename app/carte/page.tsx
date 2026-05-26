@@ -1,9 +1,8 @@
 import { Search, ChevronRight, Star } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
-import { ProductCatalog } from "@/components/product-catalog"
-import { CategoryNav } from "@/components/category-nav"
 import type { Product, DailySpecial } from "@/types"
 import { CarteSearchClient } from "./carte-search-client"
+import { CarteCatalogClient } from "./carte-catalog-client"
 
 export const metadata = {
   title: "La carte | SLD Café",
@@ -131,13 +130,6 @@ export default async function CartePage() {
       }
     })
     .filter((c) => c.products.length > 0)
-
-  // Nav categories with counts
-  const navCategories = grouped.map((c) => ({
-    id: c.id,
-    name: c.name,
-    count: c.products.length,
-  }))
 
   const dateLabel = formatDateFr()
 
@@ -280,16 +272,8 @@ export default async function CartePage() {
         </a>
       </div>
 
-      {/* ─── STICKY CATEGORY TABS ────────────────────────────────────────── */}
-      <CategoryNav categories={navCategories} />
-
-      {/* ─── PRODUCT GRID ────────────────────────────────────────────────── */}
-      <div
-        className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24"
-        style={{ paddingTop: "16px" }}
-      >
-        <ProductCatalog categories={grouped} />
-      </div>
+      {/* ─── CATEGORY TABS + PRODUCT GRID (client-side filtering) ────────── */}
+      <CarteCatalogClient categories={grouped} />
     </div>
   )
 }
