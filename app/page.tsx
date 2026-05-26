@@ -287,11 +287,11 @@ export default async function HomePage() {
                 <span className="font-serif italic text-3xl" style={{ color: "var(--terracotta)" }}>
                   .
                 </span>
-                <span className="font-mono text-xs uppercase tracking-widest ml-1" style={{ color: "var(--espresso-60)" }}>
+                <span className="font-mono text-xs uppercase tracking-widest ml-1" style={{ color: "var(--sable)" }}>
                   Caf&eacute;
                 </span>
               </div>
-              <p className="mt-4 text-sm leading-relaxed max-w-[18rem]" style={{ color: "var(--espresso-60)" }}>
+              <p className="mt-4 text-sm leading-relaxed max-w-[18rem]" style={{ color: "#FCFAF4aa" }}>
                 Sandwicherie artisanale &agrave; Toulouse. On p&eacute;trit chaque matin,
                 on garnit &agrave; la commande, on tutoie le bon go&ucirc;t.
               </p>
@@ -302,7 +302,7 @@ export default async function HomePage() {
               <p className="font-mono text-[10px] uppercase tracking-widest mb-4" style={{ color: "var(--sable)" }}>
                 Horaires
               </p>
-              <ul className="space-y-2 text-sm" style={{ color: "var(--espresso-60)" }}>
+              <ul className="space-y-2 text-sm" style={{ color: "#FCFAF4cc" }}>
                 <li className="flex justify-between gap-6">
                   <span>Lundi &ndash; Vendredi</span>
                   <span className="tabular-nums">7h30 &rarr; 16h</span>
@@ -323,7 +323,7 @@ export default async function HomePage() {
               <p className="font-mono text-[10px] uppercase tracking-widest mb-4" style={{ color: "var(--sable)" }}>
                 Adresse
               </p>
-              <address className="not-italic text-sm space-y-1 leading-relaxed" style={{ color: "var(--espresso-60)" }}>
+              <address className="not-italic text-sm space-y-1 leading-relaxed" style={{ color: "#FCFAF4cc" }}>
                 <p>12 rue des Filatiers</p>
                 <p>31000 Toulouse</p>
               </address>
@@ -334,7 +334,7 @@ export default async function HomePage() {
               <p className="font-mono text-[10px] uppercase tracking-widest mb-4" style={{ color: "var(--sable)" }}>
                 Contact
               </p>
-              <ul className="space-y-2 text-sm" style={{ color: "var(--espresso-60)" }}>
+              <ul className="space-y-2 text-sm" style={{ color: "#FCFAF4cc" }}>
                 <li>
                   <a href="tel:+33561234567" className="underline underline-offset-2 transition-opacity hover:opacity-70">
                     05 61 23 45 67
@@ -350,12 +350,12 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <div className="border-t" style={{ borderColor: "var(--espresso-20)" }}>
+        <div className="border-t" style={{ borderColor: "#ffffff20" }}>
           <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-5 flex flex-col sm:flex-row items-center justify-between gap-4">
-            <p className="text-xs" style={{ color: "var(--espresso-60)" }}>
+            <p className="text-xs" style={{ color: "#FCFAF488" }}>
               &copy; 2026 SLD Caf&eacute; &middot; Toulouse
             </p>
-            <p className="text-xs" style={{ color: "var(--espresso-60)" }}>
+            <p className="text-xs" style={{ color: "#FCFAF488" }}>
               Mentions l&eacute;gales &middot; CGV &middot; Confidentialit&eacute;
             </p>
           </div>
