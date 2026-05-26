@@ -40,10 +40,39 @@ export interface DailySpecial {
   product?: Product | null
 }
 
+export interface FormuleEtape {
+  id: string
+  formule_id: string
+  label: string
+  category: string
+  choix_count: number
+  display_order: number
+}
+
+export interface Formule {
+  id: string
+  name: string
+  tagline: string
+  price: number // cents
+  image_url: string | null
+  is_active: boolean
+  display_order: number
+  created_at: string
+  etapes?: FormuleEtape[]
+}
+
+export interface FormuleChosenProduct {
+  product_id: string
+  name: string
+  etape_label: string
+}
+
 export interface CartItem {
   id: string
   name: string
-  price: number
+  price: number // cents
   quantity: number
   category: string
+  formuleId?: string // if this is a formule line
+  formuleDetails?: FormuleChosenProduct[] // products chosen for each step
 }

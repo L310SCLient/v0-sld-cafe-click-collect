@@ -133,87 +133,164 @@ export function CartSidebar() {
             </div>
           ) : (
             <div className="space-y-3">
-              {items.map((item) => (
-                <div
-                  key={item.id}
-                  className="grid items-center gap-3 py-4"
-                  style={{
-                    gridTemplateColumns: "1fr auto auto",
-                    borderBottom: "1px solid var(--espresso-08)",
-                  }}
-                >
-                  {/* Nom + prix unitaire */}
-                  <div className="min-w-0">
+              {items.map((item) =>
+                item.formuleId ? (
+                  /* ── Formule line ── */
+                  <div
+                    key={item.id}
+                    className="py-4"
+                    style={{ borderBottom: "1px solid var(--espresso-08)" }}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      {/* Left: name + chosen products */}
+                      <div className="min-w-0 flex-1">
+                        <p
+                          style={{
+                            fontFamily: "var(--font-display)",
+                            fontSize: "16px",
+                            fontWeight: 500,
+                            color: "var(--espresso)",
+                          }}
+                        >
+                          {item.name}
+                        </p>
+                        {item.formuleDetails && item.formuleDetails.length > 0 && (
+                          <ul className="mt-1.5 space-y-0.5">
+                            {item.formuleDetails.map((d, idx) => (
+                              <li
+                                key={idx}
+                                style={{
+                                  fontFamily: "var(--font-sans)",
+                                  fontSize: "11px",
+                                  color: "var(--espresso-60)",
+                                  lineHeight: 1.4,
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    fontFamily: "var(--font-mono)",
+                                    fontSize: "9px",
+                                    textTransform: "uppercase",
+                                    letterSpacing: "0.06em",
+                                    color: "var(--terracotta)",
+                                  }}
+                                >
+                                  {d.etape_label}
+                                </span>
+                                {" "}
+                                {d.name}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+
+                      {/* Right: price + remove */}
+                      <div className="flex flex-col items-end gap-2 shrink-0">
+                        <p
+                          style={{
+                            fontFamily: "var(--font-display)",
+                            fontSize: "16px",
+                            fontWeight: 500,
+                            color: "var(--espresso)",
+                          }}
+                        >
+                          {formatPrice(item.price)}
+                        </p>
+                        <button
+                          onClick={() => removeItem(item.id)}
+                          className="flex items-center justify-center w-6 h-6 rounded-full transition-opacity hover:opacity-70"
+                          style={{ backgroundColor: "var(--argile)" }}
+                          aria-label="Supprimer la formule"
+                        >
+                          <X className="h-3 w-3" style={{ color: "var(--espresso-60)" }} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  /* ── Regular product line ── */
+                  <div
+                    key={item.id}
+                    className="grid items-center gap-3 py-4"
+                    style={{
+                      gridTemplateColumns: "1fr auto auto",
+                      borderBottom: "1px solid var(--espresso-08)",
+                    }}
+                  >
+                    {/* Nom + prix unitaire */}
+                    <div className="min-w-0">
+                      <p
+                        className="truncate"
+                        style={{
+                          fontFamily: "var(--font-display)",
+                          fontSize: "16px",
+                          fontWeight: 500,
+                          color: "var(--espresso)",
+                        }}
+                      >
+                        {item.name}
+                      </p>
+                      <p
+                        className="mt-0.5"
+                        style={{
+                          fontFamily: "var(--font-mono)",
+                          fontSize: "10px",
+                          color: "var(--espresso-60)",
+                        }}
+                      >
+                        {formatPrice(item.price)} / unité
+                      </p>
+                    </div>
+
+                    {/* Stepper quantité */}
+                    <div
+                      className="flex items-center gap-2 px-2 py-1 rounded-full"
+                      style={{ backgroundColor: "var(--argile)" }}
+                    >
+                      <button
+                        onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                        className="flex items-center justify-center w-6 h-6 rounded-full transition-opacity hover:opacity-70"
+                        aria-label="Diminuer la quantité"
+                      >
+                        <Minus className="h-3 w-3" style={{ color: "var(--espresso)" }} />
+                      </button>
+                      <span
+                        className="w-5 text-center tabular-nums"
+                        style={{
+                          fontFamily: "var(--font-mono)",
+                          fontSize: "13px",
+                          fontWeight: 500,
+                          color: "var(--espresso)",
+                        }}
+                      >
+                        {item.quantity}
+                      </span>
+                      <button
+                        onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                        className="flex items-center justify-center w-6 h-6 rounded-full transition-opacity hover:opacity-70"
+                        aria-label="Augmenter la quantité"
+                      >
+                        <Plus className="h-3 w-3" style={{ color: "var(--espresso)" }} />
+                      </button>
+                    </div>
+
+                    {/* Total ligne */}
                     <p
-                      className="truncate"
                       style={{
                         fontFamily: "var(--font-display)",
                         fontSize: "16px",
                         fontWeight: 500,
                         color: "var(--espresso)",
+                        minWidth: "72px",
+                        textAlign: "right",
                       }}
                     >
-                      {item.name}
-                    </p>
-                    <p
-                      className="mt-0.5"
-                      style={{
-                        fontFamily: "var(--font-mono)",
-                        fontSize: "10px",
-                        color: "var(--espresso-60)",
-                      }}
-                    >
-                      {formatPrice(item.price)} / unité
+                      {formatPrice(item.price * item.quantity)}
                     </p>
                   </div>
-
-                  {/* Stepper quantité */}
-                  <div
-                    className="flex items-center gap-2 px-2 py-1 rounded-full"
-                    style={{ backgroundColor: "var(--argile)" }}
-                  >
-                    <button
-                      onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                      className="flex items-center justify-center w-6 h-6 rounded-full transition-opacity hover:opacity-70"
-                      aria-label="Diminuer la quantité"
-                    >
-                      <Minus className="h-3 w-3" style={{ color: "var(--espresso)" }} />
-                    </button>
-                    <span
-                      className="w-5 text-center tabular-nums"
-                      style={{
-                        fontFamily: "var(--font-mono)",
-                        fontSize: "13px",
-                        fontWeight: 500,
-                        color: "var(--espresso)",
-                      }}
-                    >
-                      {item.quantity}
-                    </span>
-                    <button
-                      onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                      className="flex items-center justify-center w-6 h-6 rounded-full transition-opacity hover:opacity-70"
-                      aria-label="Augmenter la quantité"
-                    >
-                      <Plus className="h-3 w-3" style={{ color: "var(--espresso)" }} />
-                    </button>
-                  </div>
-
-                  {/* Total ligne */}
-                  <p
-                    style={{
-                      fontFamily: "var(--font-display)",
-                      fontSize: "16px",
-                      fontWeight: 500,
-                      color: "var(--espresso)",
-                      minWidth: "72px",
-                      textAlign: "right",
-                    }}
-                  >
-                    {formatPrice(item.price * item.quantity)}
-                  </p>
-                </div>
-              ))}
+                )
+              )}
 
               {/* Encart retrait */}
               <div

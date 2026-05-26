@@ -6,6 +6,7 @@ import type { CartItem } from "@/types"
 interface CartContextType {
   items: CartItem[]
   addItem: (item: Omit<CartItem, "quantity">) => void
+  addFormuleItem: (item: Omit<CartItem, "quantity">) => void
   removeItem: (id: string) => void
   updateQuantity: (id: string, quantity: number) => void
   clearCart: () => void
@@ -48,6 +49,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [items, hydrated])
 
+  // For regular products: find by id and increment quantity, or push new entry
   const addItem = useCallback((item: Omit<CartItem, "quantity">) => {
     setItems((prev) => {
       const existing = prev.find((i) => i.id === item.id)
@@ -58,6 +60,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
       }
       return [...prev, { ...item, quantity: 1 }]
     })
+    setIsCartOpen(true)
+  }, [])
+
+  // For formule lines: always push a new entry (each composition is unique)
+  const addFormuleItem = useCallback((item: Omit<CartItem, "quantity">) => {
+    setItems((prev) => [...prev, { ...item, quantity: 1 }])
     setIsCartOpen(true)
   }, [])
 
@@ -90,6 +98,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       value={{
         items,
         addItem,
+        addFormuleItem,
         removeItem,
         updateQuantity,
         clearCart,

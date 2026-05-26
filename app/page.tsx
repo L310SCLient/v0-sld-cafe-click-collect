@@ -1,7 +1,7 @@
-import { ArrowRight } from "lucide-react"
 import { createClient } from "@/lib/supabase/server"
 import { CatalogFilter } from "@/components/catalog-filter"
 import { DailySpecialBanner } from "@/components/daily-special-banner"
+import { FormulesList } from "@/components/formules-list"
 import type { Product } from "@/types"
 
 /* ─── category config ──────────────────────────────────────────────────────── */
@@ -16,47 +16,6 @@ const categoryMeta: Record<string, { name: string }> = {
 
 const categoryOrder = ["viennoiseries", "salades", "sandwichs", "chaud", "desserts"]
 
-/* ─── formules data ────────────────────────────────────────────────────────── */
-
-const FORMULES = [
-  {
-    id: "f-midi",
-    name: "La Formule Midi",
-    tagline: "Le d\u00e9jeuner complet, \u00e9quilibr\u00e9 comme \u00e0 la maison.",
-    price: 9.5,
-    photo: "",
-    slots: [
-      "Un sandwich ou un wrap",
-      "Une boisson 33 cl",
-      "Un dessert ou une viennoiserie",
-    ],
-  },
-  {
-    id: "f-legere",
-    name: "La Formule L\u00e9g\u00e8re",
-    tagline: "Une grande salade, et tout ce qu\u2019il faut autour.",
-    price: 10.5,
-    photo: "light",
-    slots: [
-      "Une salade",
-      "Une boisson 33 cl",
-      "Un dessert",
-    ],
-  },
-  {
-    id: "f-express",
-    name: "La Formule Express",
-    tagline: "Pour les jours press\u00e9s, sans rien sacrifier.",
-    price: 6.5,
-    photo: "dark",
-    slots: [
-      "Un mini sandwich",
-      "Une viennoiserie",
-      "Une boisson 33 cl",
-    ],
-  },
-]
-
 /* ─── page ─────────────────────────────────────────────────────────────────── */
 
 export default async function HomePage() {
@@ -66,6 +25,23 @@ export default async function HomePage() {
     .from("products")
     .select("*")
     .order("display_order", { ascending: true })
+
+  // Fetch formules with étapes — graceful fallback if table doesn't exist yet
+  let formulesWithEtapes: any[] = []
+  try {
+    const { data: formulesData } = await supabase
+      .from("formules")
+      .select("*, etapes:formule_etapes(*)")
+      .eq("is_active", true)
+      .order("display_order")
+
+    formulesWithEtapes = (formulesData ?? []).map((f: any) => ({
+      ...f,
+      etapes: (f.etapes ?? []).sort((a: any, b: any) => a.display_order - b.display_order),
+    }))
+  } catch {
+    // Table doesn't exist yet — show nothing
+  }
 
   const grouped = categoryOrder
     .map((catId) => ({
@@ -142,111 +118,7 @@ export default async function HomePage() {
           </div>
         </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {FORMULES.map((f) => {
-            const photoClass =
-              f.photo === "dark"
-                ? "sld-photo-dark"
-                : f.photo === "light"
-                  ? "sld-photo-light"
-                  : "sld-photo"
-            return (
-              <article
-                key={f.id}
-                className="flex flex-col overflow-hidden"
-                style={{
-                  background: "var(--creme-surface)",
-                  borderRadius: "var(--radius-lg)",
-                  boxShadow: "var(--shadow-sm)",
-                  border: "1px solid var(--sable-soft)",
-                }}
-              >
-                {/* Photo header */}
-                <div className={photoClass} style={{ height: 120, position: "relative" }}>
-                  <span
-                    className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-white"
-                    style={{
-                      background: "var(--terracotta)",
-                      fontFamily: "var(--font-mono)",
-                      fontSize: 9,
-                      letterSpacing: "0.18em",
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    &#9733; Formule
-                  </span>
-                </div>
-
-                {/* Content */}
-                <div className="flex flex-col flex-1 p-5">
-                  <h3
-                    className="font-serif"
-                    style={{ fontSize: 20, fontWeight: 500, lineHeight: 1.15 }}
-                  >
-                    {f.name}
-                  </h3>
-                  <p
-                    className="font-serif italic mt-1"
-                    style={{ fontSize: 13, color: "var(--espresso-60)", lineHeight: 1.4 }}
-                  >
-                    {f.tagline}
-                  </p>
-
-                  <ul className="mt-3 flex flex-col gap-1.5">
-                    {f.slots.map((slot, i) => (
-                      <li
-                        key={i}
-                        className="flex items-center gap-2"
-                        style={{ fontSize: 13, color: "var(--espresso-80)" }}
-                      >
-                        <span
-                          className="shrink-0 inline-flex items-center justify-center"
-                          style={{
-                            width: 18,
-                            height: 18,
-                            borderRadius: "50%",
-                            background: "var(--argile)",
-                            color: "var(--terracotta)",
-                            fontFamily: "var(--font-mono)",
-                            fontSize: 10,
-                            fontWeight: 500,
-                          }}
-                        >
-                          {i + 1}
-                        </span>
-                        {slot}
-                      </li>
-                    ))}
-                  </ul>
-
-                  {/* Price footer */}
-                  <div
-                    className="mt-auto pt-4 flex items-center justify-between"
-                    style={{ borderTop: "1px solid var(--sable-soft)" }}
-                  >
-                    <div>
-                      <span
-                        className="font-mono text-[9px] uppercase tracking-widest"
-                        style={{ color: "var(--espresso-60)" }}
-                      >
-                        Tout compris
-                      </span>
-                      <p className="font-serif" style={{ fontSize: 24, fontWeight: 500, marginTop: -2 }}>
-                        {f.price.toFixed(2).replace(".", ",")}&nbsp;&euro;
-                      </p>
-                    </div>
-                    <a
-                      href="#catalogue"
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium text-white transition-colors bg-[var(--terracotta)] hover:bg-[var(--terracotta-hover)]"
-                    >
-                      Commander <ArrowRight className="h-3.5 w-3.5" />
-                    </a>
-                  </div>
-                </div>
-              </article>
-            )
-          })}
-        </div>
+        <FormulesList formules={formulesWithEtapes} />
       </section>
 
       {/* ================================================================

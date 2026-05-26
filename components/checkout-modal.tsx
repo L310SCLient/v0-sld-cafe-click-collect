@@ -91,12 +91,25 @@ export function CheckoutModal({ open, onOpenChange }: CheckoutModalProps) {
     setIsProcessing(true)
     setError("")
 
-    const orderItems: OrderItem[] = items.map((item) => ({
-      product_id: item.id,
-      name: item.name,
-      price: item.price,
-      quantity: item.quantity,
-    }))
+    const orderItems: OrderItem[] = items.map((item) => {
+      if (item.formuleId) {
+        // Formule line: use formuleId as product_id, embed chosen products in name
+        return {
+          product_id: item.formuleId,
+          name: item.formuleDetails && item.formuleDetails.length > 0
+            ? `${item.name} (${item.formuleDetails.map((d) => d.name).join(", ")})`
+            : item.name,
+          price: item.price,
+          quantity: 1,
+        }
+      }
+      return {
+        product_id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+      }
+    })
 
     const result = await createOrder({
       firstName: firstName.trim(),
