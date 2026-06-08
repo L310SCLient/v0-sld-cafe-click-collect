@@ -12,9 +12,10 @@ const categoryMeta: Record<string, { name: string }> = {
   sandwichs: { name: "Sandwichs" },
   chaud: { name: "Chaud" },
   desserts: { name: "Desserts" },
+  boissons: { name: "Boissons" },
 }
 
-const categoryOrder = ["viennoiseries", "salades", "sandwichs", "chaud", "desserts"]
+const categoryOrder = ["viennoiseries", "salades", "sandwichs", "chaud", "desserts", "boissons"]
 
 /* ─── page ─────────────────────────────────────────────────────────────────── */
 

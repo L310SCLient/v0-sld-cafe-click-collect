@@ -14,6 +14,7 @@ const CATEGORIES: { key: Product['category'] | 'all'; label: string }[] = [
   { key: 'salades', label: 'Salades' },
   { key: 'chaud', label: 'Plats chauds' },
   { key: 'desserts', label: 'Desserts' },
+  { key: 'boissons', label: 'Boissons' },
 ]
 
 function formatPriceCents(cents: number): string {

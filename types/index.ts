@@ -2,7 +2,7 @@ export interface Product {
   id: string
   name: string
   price: number
-  category: 'viennoiseries' | 'salades' | 'sandwichs' | 'chaud' | 'desserts'
+  category: 'viennoiseries' | 'salades' | 'sandwichs' | 'chaud' | 'desserts' | 'boissons'
   available: boolean
   display_order: number
   created_at: string
