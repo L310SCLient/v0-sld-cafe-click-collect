@@ -2,8 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { OrdersBoard } from '@/components/admin/orders-board'
 import { DashboardStats } from '@/components/admin/dashboard-stats'
+import { CommandesHeaderActions } from '@/components/admin/commandes-header-actions'
 import type { Order } from '@/types'
-import { Bell, Plus, Store } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -102,58 +102,9 @@ export default async function CommandesPage() {
           </h1>
         </div>
 
-        <div className="flex items-center gap-2 mt-2">
-          {/* Boutique ouverte indicator */}
-          <div
-            className="flex items-center gap-2 px-3 py-2 rounded-lg"
-            style={{
-              backgroundColor: 'var(--creme-surface)',
-              border: '1px solid var(--sable-soft)',
-              boxShadow: 'var(--shadow-xs)',
-            }}
-          >
-            <Store
-              className="h-4 w-4"
-              style={{ color: 'var(--status-ready)' }}
-            />
-            <span
-              style={{
-                fontFamily: 'var(--font-mono)',
-                fontSize: '12px',
-                color: 'var(--espresso)',
-              }}
-            >
-              Boutique ouverte
-            </span>
-          </div>
-
-          {/* Notifications */}
-          <button
-            className="w-9 h-9 flex items-center justify-center rounded-lg transition-colors"
-            style={{
-              backgroundColor: 'var(--creme-surface)',
-              border: '1px solid var(--sable-soft)',
-              boxShadow: 'var(--shadow-xs)',
-              color: 'var(--espresso-60)',
-            }}
-            aria-label="Notifications"
-          >
-            <Bell className="h-4 w-4" />
-          </button>
-
-          {/* Manual order */}
-          <button
-            className="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors bg-[var(--terracotta)] hover:bg-[var(--terracotta-hover)] text-white shadow-[var(--shadow-xs)]"
-            style={{
-              fontFamily: 'var(--font-mono)',
-              fontSize: '12px',
-              fontWeight: 500,
-            }}
-          >
-            <Plus className="h-4 w-4" />
-            Commande manuelle
-          </button>
-        </div>
+        <CommandesHeaderActions
+          pendingCount={((orders as Order[]) ?? []).filter((o) => o.status === 'pending').length}
+        />
       </div>
 
       {/* Stats */}

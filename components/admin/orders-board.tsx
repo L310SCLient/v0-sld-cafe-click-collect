@@ -7,6 +7,8 @@ import { timeAgo } from '@/lib/utils'
 import type { Order } from '@/types'
 import { Printer } from 'lucide-react'
 import { toast } from 'sonner'
+import { createPortal } from 'react-dom'
+import { PrintableTicket, triggerPrint } from '@/components/printable-ticket'
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -86,6 +88,7 @@ function getAction(status: Order['status']): {
 
 function KanbanCard({ order, isNew }: { order: Order; isNew: boolean }) {
   const [loading, setLoading] = useState(false)
+  const [printing, setPrinting] = useState(false)
   const action = getAction(order.status)
   const showPrint = order.status === 'ready' || order.status === 'picked_up'
   const isArchived = order.status === 'picked_up'
@@ -99,7 +102,11 @@ function KanbanCard({ order, isNew }: { order: Order; isNew: boolean }) {
   }
 
   function handlePrint() {
-    toast('Impression à venir')
+    setPrinting(true)
+    requestAnimationFrame(() => {
+      triggerPrint()
+      setTimeout(() => setPrinting(false), 500)
+    })
   }
 
   return (
@@ -285,6 +292,9 @@ function KanbanCard({ order, isNew }: { order: Order; isNew: boolean }) {
           )}
         </div>
       </div>
+
+      {/* Print ticket portal */}
+      {printing && createPortal(<PrintableTicket order={order} />, document.body)}
     </div>
   )
 }

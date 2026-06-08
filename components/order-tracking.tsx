@@ -7,6 +7,8 @@ import { formatPrice, cn } from "@/lib/utils"
 import confetti from "canvas-confetti"
 import type { Order } from "@/types"
 import { toast } from "sonner"
+import { createPortal } from "react-dom"
+import { PrintableTicket, triggerPrint } from "@/components/printable-ticket"
 
 interface OrderTrackingProps {
   order: Order
@@ -584,11 +586,16 @@ export function OrderTracking({ order: initialOrder }: OrderTrackingProps) {
     }
   }, [order.id])
 
+  const [printing, setPrinting] = useState(false)
   const orderNum = shortOrderNumber(order.id)
   const isPickedUp = order.status === "picked_up"
 
   function handlePrint() {
-    toast("Impression à venir")
+    setPrinting(true)
+    requestAnimationFrame(() => {
+      triggerPrint()
+      setTimeout(() => setPrinting(false), 500)
+    })
   }
 
   return (
@@ -670,6 +677,9 @@ export function OrderTracking({ order: initialOrder }: OrderTrackingProps) {
       {showReadyOverlay && order.status === "ready" && (
         <ReadyOverlay order={order} onClose={() => setShowReadyOverlay(false)} />
       )}
+
+      {/* Print ticket portal */}
+      {printing && createPortal(<PrintableTicket order={order} />, document.body)}
     </>
   )
 }
