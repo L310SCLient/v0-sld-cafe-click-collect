@@ -6,6 +6,7 @@ import { Header } from '@/components/header'
 import { CartProvider } from '@/components/cart-provider'
 import { CartSidebar } from '@/components/cart-sidebar'
 import { Toaster } from '@/components/ui/sonner'
+import { PwaInstallPrompt } from '@/components/pwa-install-prompt'
 
 const playfair = Playfair_Display({
   subsets: ['latin'],
@@ -31,6 +32,7 @@ const jetbrains = JetBrains_Mono({
 
 export const viewport: Viewport = {
   themeColor: '#241E1A',
+  viewportFit: 'cover',
 }
 
 export const metadata: Metadata = {
@@ -40,7 +42,7 @@ export const metadata: Metadata = {
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
-    statusBarStyle: 'default',
+    statusBarStyle: 'black-translucent',
     title: 'SLD Café',
   },
   openGraph: {
@@ -66,7 +68,7 @@ export const metadata: Metadata = {
         type: 'image/svg+xml',
       },
     ],
-    apple: '/apple-icon.png',
+    apple: '/icons/apple-touch-icon.svg',
   },
 }
 
@@ -88,6 +90,7 @@ export default function RootLayout({
           <CartSidebar />
         </CartProvider>
         <Toaster position="bottom-right" />
+        <PwaInstallPrompt />
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>
     </html>

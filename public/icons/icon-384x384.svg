@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 384" width="384" height="384">
+  <rect width="384" height="384" rx="64" ry="64" fill="#241E1A"/>
+  <text x="192" y="176" text-anchor="middle" dominant-baseline="central" font-family="'Playfair Display', 'Georgia', 'Times New Roman', serif" font-size="100" font-weight="700" fill="#FCFAF4">SLD<tspan fill="#A85A2E">.</tspan></text>
+  <text x="192" y="254" text-anchor="middle" dominant-baseline="central" font-family="'Courier New', 'Courier', monospace" font-size="28" font-weight="400" letter-spacing="12" fill="#C9A66B">CAFE</text>
+</svg>
