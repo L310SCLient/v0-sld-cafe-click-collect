@@ -58,7 +58,7 @@ export default async function HomePage() {
       {/* ================================================================
           1. BANDEAU COMPACT
          ================================================================ */}
-      <section className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 pt-8 pb-6">
+      <section className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 pt-6 sm:pt-8 pb-4 sm:pb-6">
         <p
           className="font-mono text-[10px] uppercase tracking-widest"
           style={{ color: "var(--espresso-60)" }}
@@ -66,26 +66,26 @@ export default async function HomePage() {
           Sandwicherie artisanale &middot; Toulouse
         </p>
         <h1
-          className="mt-2 font-serif font-normal"
-          style={{ fontSize: "clamp(28px, 4vw, 40px)", color: "var(--espresso)" }}
+          className="mt-1.5 sm:mt-2 font-serif font-normal"
+          style={{ fontSize: "clamp(24px, 4vw, 40px)", color: "var(--espresso)" }}
         >
           Commandez, on pr&eacute;pare.
         </h1>
 
-        <div className="mt-4 flex flex-wrap gap-6 sm:gap-10">
+        <div className="mt-3 sm:mt-4 flex flex-wrap gap-3 sm:gap-10">
           {[
             { time: "07:30", label: "Premi\u00e8re fourn\u00e9e" },
             { time: "11:30", label: "Service midi" },
             { time: "16:00", label: "Dernier sandwich" },
           ].map(({ time, label }) => (
-            <div key={time} className="flex items-center gap-2">
+            <div key={time} className="flex items-center gap-1.5 sm:gap-2">
               <span
-                className="font-mono text-sm font-medium tabular-nums"
+                className="font-mono text-xs sm:text-sm font-medium tabular-nums"
                 style={{ color: "var(--sable)" }}
               >
                 {time}
               </span>
-              <span className="text-sm" style={{ color: "var(--espresso-60)" }}>
+              <span className="text-xs sm:text-sm" style={{ color: "var(--espresso-60)" }}>
                 {label}
               </span>
             </div>
@@ -101,8 +101,8 @@ export default async function HomePage() {
       {/* ================================================================
           3. LES FORMULES
          ================================================================ */}
-      <section className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 py-10">
-        <div className="flex items-baseline justify-between mb-6">
+      <section className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 py-6 sm:py-10">
+        <div className="flex items-baseline justify-between mb-4 sm:mb-6">
           <div>
             <p
               className="font-mono text-[10px] uppercase tracking-widest"
@@ -112,7 +112,7 @@ export default async function HomePage() {
             </p>
             <h2
               className="mt-1 font-serif font-normal"
-              style={{ fontSize: "clamp(24px, 3vw, 36px)", color: "var(--espresso)" }}
+              style={{ fontSize: "clamp(22px, 3vw, 36px)", color: "var(--espresso)" }}
             >
               Composez votre d&eacute;jeuner
             </h2>

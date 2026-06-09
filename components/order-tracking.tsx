@@ -658,13 +658,13 @@ export function OrderTracking({ order: initialOrder }: OrderTrackingProps) {
         {isPickedUp && (
           <button
             onClick={handlePrint}
-            className="flex items-center gap-2 px-5 py-3 rounded-full transition-opacity hover:opacity-70"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3.5 rounded-full transition-opacity active:opacity-70 min-h-[48px]"
             style={{
               backgroundColor: "var(--argile)",
               color: "var(--espresso)",
               border: "1px solid var(--espresso-20)",
               fontFamily: "var(--font-sans)",
-              fontSize: "14px",
+              fontSize: "15px",
             }}
           >
             <Printer className="h-4 w-4" />

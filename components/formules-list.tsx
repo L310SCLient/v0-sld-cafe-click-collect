@@ -19,7 +19,7 @@ export function FormulesList({ formules }: FormulesListProps) {
 
   return (
     <>
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
         {formules.map((f) => {
           // Derive a photo class from image_url presence or fallback
           const photoClass = !f.image_url
@@ -124,16 +124,10 @@ export function FormulesList({ formules }: FormulesListProps) {
                   </div>
                   <button
                     onClick={() => setActiveFormule(f)}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium text-white transition-colors"
+                    className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-sm font-medium text-white transition-colors active:opacity-80 min-h-[44px]"
                     style={{
                       backgroundColor: "var(--terracotta)",
                       fontFamily: "var(--font-sans)",
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = "var(--terracotta-hover)"
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "var(--terracotta)"
                     }}
                   >
                     Commander <ArrowRight className="h-3.5 w-3.5" />

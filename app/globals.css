@@ -146,6 +146,77 @@
 }
 
 /* ============================================================
+   MOBILE / PWA UTILITIES
+   ============================================================ */
+
+/* Safe area padding for fixed bottom elements */
+.pb-safe {
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+/* Hide scrollbar but keep scrollable */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Snap scroll for category pills */
+.snap-x-mandatory {
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+}
+.snap-start {
+  scroll-snap-align: start;
+}
+
+/* Active feedback for touch (replaces hover on mobile) */
+@media (hover: none) {
+  .touch-active:active {
+    opacity: 0.75;
+    transform: scale(0.97);
+    transition: transform 0.1s, opacity 0.1s;
+  }
+}
+
+/* Bottom sheet backdrop */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background-color: rgba(36, 30, 26, 0.35);
+  backdrop-filter: blur(2px);
+}
+
+/* Bottom sheet panel */
+.sheet-panel {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 51;
+  max-height: 92vh;
+  border-radius: 20px 20px 0 0;
+  background-color: var(--creme-bg);
+  box-shadow: 0 -8px 40px rgba(36, 30, 26, 0.18);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Sheet handle bar */
+.sheet-handle {
+  width: 40px;
+  height: 4px;
+  border-radius: 2px;
+  background-color: var(--espresso-20);
+  margin: 10px auto 0;
+}
+
+/* ============================================================
    UTILITY CLASSES
    ============================================================ */
 

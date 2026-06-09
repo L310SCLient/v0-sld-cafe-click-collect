@@ -12,6 +12,7 @@ export function Header() {
   const { totalItems, setIsCartOpen } = useCart()
   const [prevCount, setPrevCount] = useState(totalItems)
   const [badgeBounce, setBadgeBounce] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
     if (totalItems > prevCount) {
@@ -26,44 +27,70 @@ export function Header() {
     setPrevCount(totalItems)
   }, [totalItems])
 
+  // Track scroll for glass intensity
+  useEffect(() => {
+    function onScroll() {
+      setScrolled(window.scrollY > 8)
+    }
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => window.removeEventListener("scroll", onScroll)
+  }, [])
+
   if (pathname.startsWith("/admin")) return null
 
   return (
     <header
-      className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md"
+      className={cn(
+        "fixed top-0 left-0 right-0 z-50 transition-all duration-200",
+        scrolled ? "backdrop-blur-lg" : "backdrop-blur-md",
+      )}
       style={{
-        backgroundColor: "color-mix(in srgb, var(--creme-surface) 95%, transparent)",
+        backgroundColor: scrolled
+          ? "color-mix(in srgb, var(--creme-surface) 92%, transparent)"
+          : "color-mix(in srgb, var(--creme-surface) 95%, transparent)",
         borderBottom: "1px solid var(--sable-soft)",
+        paddingTop: "env(safe-area-inset-top)",
       }}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16">
+        <div className="flex items-center justify-between h-14 sm:h-16">
           {/* Brand */}
           <Link href="/" className="flex items-baseline gap-0.5 shrink-0">
-            <span className="font-serif text-xl font-normal leading-none" style={{ color: "var(--espresso)" }}>
+            <span className="font-serif text-lg sm:text-xl font-normal leading-none" style={{ color: "var(--espresso)" }}>
               SLD
             </span>
-            <span className="font-serif italic text-xl leading-none" style={{ color: "var(--terracotta)" }}>
+            <span className="font-serif italic text-lg sm:text-xl leading-none" style={{ color: "var(--terracotta)" }}>
               .
             </span>
-            <span className="font-mono text-[10px] uppercase tracking-widest ml-1" style={{ color: "var(--espresso-60)" }}>
-              CAF&Eacute;
+            <span className="font-mono text-[9px] sm:text-[10px] uppercase tracking-widest ml-1" style={{ color: "var(--espresso-60)" }}>
+              Caf&eacute;
             </span>
           </Link>
 
           {/* Right: status + cart */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Status — hidden on small mobile */}
             <span
               className="hidden sm:inline-flex items-center gap-1.5 font-mono text-[10px] uppercase tracking-widest"
               style={{ color: "var(--espresso-60)" }}
             >
               <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "var(--status-ready)" }} />
-              OUVERT &middot; jusqu&apos;&agrave; 14:30
+              Ouvert &middot; jusqu&apos;&agrave; 14:30
             </span>
 
+            {/* Mobile: compact status */}
+            <span
+              className="sm:hidden inline-flex items-center gap-1 font-mono text-[9px] uppercase tracking-wider"
+              style={{ color: "var(--espresso-60)" }}
+            >
+              <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ backgroundColor: "var(--status-ready)" }} />
+              Ouvert
+            </span>
+
+            {/* Cart button — 44x44 min touch target */}
             <button
               onClick={() => setIsCartOpen(true)}
-              className="relative inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white transition-colors rounded-full bg-[var(--terracotta)] hover:bg-[var(--terracotta-hover)]"
+              className="relative inline-flex items-center justify-center gap-2 text-sm font-medium text-white transition-colors rounded-full bg-[var(--terracotta)] active:opacity-80 sm:hover:bg-[var(--terracotta-hover)] min-w-[44px] min-h-[44px] px-3 sm:px-4"
               aria-label="Ouvrir le panier"
             >
               <ShoppingBag className="h-4 w-4" strokeWidth={1.75} />
