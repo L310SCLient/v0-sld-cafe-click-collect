@@ -3,6 +3,7 @@ export interface Product {
   name: string
   price: number
   category: 'viennoiseries' | 'salades' | 'sandwichs' | 'chaud' | 'desserts' | 'boissons'
+  image_url: string | null
   available: boolean
   display_order: number
   created_at: string
