@@ -74,6 +74,7 @@ export interface CartItem {
   price: number // cents
   quantity: number
   category: string
+  image_url?: string | null
   formuleId?: string // if this is a formule line
   formuleDetails?: FormuleChosenProduct[] // products chosen for each step
 }

@@ -2,6 +2,7 @@
 
 import { X, Minus, Plus, Clock, ShoppingBag } from "lucide-react"
 import { usePathname } from "next/navigation"
+import Image from "next/image"
 import { useCart } from "./cart-provider"
 import { useState, useEffect } from "react"
 import { CheckoutModal } from "./checkout-modal"
@@ -95,6 +96,12 @@ export function CartSidebar() {
                 </div>
               ) : (
                 <div key={item.id} className="flex items-center gap-3 py-4" style={{ borderBottom: "1px solid var(--espresso-08)" }}>
+                  {/* Mini thumbnail */}
+                  {item.image_url && (
+                    <div className="w-8 h-8 rounded-md overflow-hidden shrink-0 relative">
+                      <Image src={item.image_url} alt="" fill className="object-cover" sizes="32px" />
+                    </div>
+                  )}
                   <div className="min-w-0 flex-1">
                     <p className="truncate" style={{ fontFamily: "var(--font-display)", fontSize: "16px", fontWeight: 500, color: "var(--espresso)" }}>
                       {item.name}

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { Plus, Check } from "lucide-react"
+import Image from "next/image"
 import { useCart } from "./cart-provider"
 import { cn } from "@/lib/utils"
 import type { Product } from "@/types"
@@ -28,6 +29,7 @@ export function ProductCard({ product, categoryLabel }: ProductCardProps) {
       name: product.name,
       price: product.price,
       category: product.category,
+      image_url: product.image_url,
     })
     setAdded(true)
     setTimeout(() => setAdded(false), 600)
@@ -46,11 +48,22 @@ export function ProductCard({ product, categoryLabel }: ProductCardProps) {
       )}
       style={{ padding: "12px 14px" }}
     >
-      {/* Photo placeholder — square on mobile, hidden on desktop (kept as original) */}
+      {/* Photo — square on mobile, hidden on desktop */}
       <div
-        className="sld-photo rounded-lg shrink-0 sm:hidden"
+        className={cn("rounded-lg shrink-0 sm:hidden relative overflow-hidden", !product.image_url && "sld-photo")}
         style={{ width: "56px", height: "56px" }}
-      />
+      >
+        {product.image_url && (
+          <Image
+            src={product.image_url}
+            alt={product.name}
+            fill
+            className="object-cover"
+            sizes="56px"
+            loading="lazy"
+          />
+        )}
+      </div>
 
       {/* Content area */}
       <div className="flex-1 min-w-0 flex items-center gap-3 sm:flex-col sm:items-stretch sm:gap-0">

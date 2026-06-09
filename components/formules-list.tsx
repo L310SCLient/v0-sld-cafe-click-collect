@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { ArrowRight } from "lucide-react"
+import Image from "next/image"
 import { FormuleConfigurator } from "./formule-configurator"
 import { formatPrice } from "@/lib/utils"
 import type { Formule, FormuleEtape } from "@/types"
@@ -21,11 +22,6 @@ export function FormulesList({ formules }: FormulesListProps) {
     <>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
         {formules.map((f) => {
-          // Derive a photo class from image_url presence or fallback
-          const photoClass = !f.image_url
-            ? "sld-photo"
-            : "sld-photo"
-
           return (
             <article
               key={f.id}
@@ -38,13 +34,15 @@ export function FormulesList({ formules }: FormulesListProps) {
               }}
             >
               {/* Photo header */}
-              <div className={photoClass} style={{ height: 120, position: "relative" }}>
+              <div className={f.image_url ? "" : "sld-photo"} style={{ height: 120, position: "relative" }}>
                 {f.image_url && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
+                  <Image
                     src={f.image_url}
                     alt={f.name}
-                    className="absolute inset-0 w-full h-full object-cover"
+                    fill
+                    className="object-cover"
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    loading="lazy"
                   />
                 )}
                 <span
