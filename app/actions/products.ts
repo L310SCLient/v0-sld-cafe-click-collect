@@ -26,6 +26,7 @@ export async function createProduct(data: {
   name: string
   price: number
   category: Product['category']
+  image_url?: string
   available: boolean
 }): Promise<{ error?: string }> {
   const supabase = createAdminClient()
@@ -44,6 +45,7 @@ export async function createProduct(data: {
       name: data.name,
       price: data.price,
       category: data.category,
+      image_url: data.image_url || null,
       available: data.available,
       display_order: nextOrder,
     })
@@ -61,6 +63,7 @@ export async function updateProduct(
     name: string
     price: number
     category: Product['category']
+    image_url?: string
     available: boolean
   }
 ): Promise<{ error?: string }> {
@@ -72,6 +75,7 @@ export async function updateProduct(
       name: data.name,
       price: data.price,
       category: data.category,
+      image_url: data.image_url || null,
       available: data.available,
     })
     .eq('id', id)

@@ -11,6 +11,7 @@ import {
 import type { Formule, FormuleEtape } from '@/types'
 import { Plus, Pencil, Trash2, Star, X, GripVertical } from 'lucide-react'
 import { toast } from 'sonner'
+import { ImageUploadField } from '@/components/admin/image-upload-field'
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -344,6 +345,7 @@ function FormuleModal({
   const [priceEur, setPriceEur] = useState(
     formule ? (formule.price / 100).toFixed(2).replace('.', ',') : ''
   )
+  const [imageUrl, setImageUrl] = useState<string | null>(formule?.image_url ?? null)
   const [isActive, setIsActive] = useState(formule?.is_active ?? true)
   const [etapes, setEtapes] = useState<EtapeDraft[]>(
     formule?.etapes?.map((e) => ({
@@ -392,6 +394,7 @@ function FormuleModal({
       name: name.trim(),
       tagline: tagline.trim(),
       price: priceCents,
+      image_url: imageUrl || undefined,
       is_active: isActive,
       etapes: etapes.map((e) => ({
         label: e.label.trim(),
@@ -497,6 +500,14 @@ function FormuleModal({
 
         {/* Modal body */}
         <form onSubmit={handleSubmit} className="px-7 py-6 space-y-6">
+
+          {/* Image */}
+          <ImageUploadField
+            value={imageUrl}
+            onChange={setImageUrl}
+            prefix="formules"
+            aspect="16/9"
+          />
 
           {/* Nom + Tagline */}
           <div className="grid gap-4 sm:grid-cols-2">

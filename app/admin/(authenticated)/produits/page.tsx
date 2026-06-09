@@ -11,6 +11,7 @@ import {
 import type { Product } from '@/types'
 import { Pencil, Trash2, Plus, Search, X } from 'lucide-react'
 import { toast } from 'sonner'
+import { ImageUploadField } from '@/components/admin/image-upload-field'
 
 const CATEGORY_OPTIONS: { key: Product['category']; label: string }[] = [
   { key: 'viennoiseries', label: 'Viennoiseries' },
@@ -124,6 +125,7 @@ function ProductModal({
     product ? (product.price / 100).toFixed(2).replace('.', ',') : ''
   )
   const [category, setCategory] = useState<Product['category']>(product?.category ?? 'sandwichs')
+  const [imageUrl, setImageUrl] = useState<string | null>(product?.image_url ?? null)
   const [available, setAvailable] = useState(product?.available ?? true)
   const [saving, setSaving] = useState(false)
 
@@ -145,6 +147,7 @@ function ProductModal({
       name: name.trim(),
       price: priceCents,
       category,
+      image_url: imageUrl || undefined,
       available,
     }
 
@@ -214,6 +217,14 @@ function ProductModal({
 
         {/* Body */}
         <form onSubmit={handleSubmit} className="px-7 py-6 space-y-5">
+          {/* Image */}
+          <ImageUploadField
+            value={imageUrl}
+            onChange={setImageUrl}
+            prefix="products"
+            aspect="square"
+          />
+
           <div>
             <FieldLabel htmlFor="prod-name">Nom</FieldLabel>
             <input
