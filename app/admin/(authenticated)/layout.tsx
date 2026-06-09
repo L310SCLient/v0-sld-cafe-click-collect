@@ -26,9 +26,9 @@ export default async function AdminAuthenticatedLayout({
     >
       <AdminNav pendingCount={count ?? 0} />
 
-      {/* Main content — offset by 240px sidebar on desktop */}
-      <main className="lg:pl-60 pb-20 lg:pb-0">
-        <div className="p-5 sm:p-7 lg:p-9">
+      {/* Main content — sidebar offset on desktop, top bar offset on mobile/tablet */}
+      <main className="lg:pl-60 pt-14 lg:pt-0">
+        <div className="p-4 sm:p-6 lg:p-9">
           {children}
         </div>
       </main>

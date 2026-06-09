@@ -88,17 +88,17 @@ function AvailabilityToggle({
       onClick={() => !disabled && onChange(!checked)}
       className="relative inline-flex items-center rounded-full transition-colors focus:outline-none disabled:opacity-50"
       style={{
-        width: '38px',
-        height: '21px',
+        width: '48px',
+        height: '28px',
         backgroundColor: checked ? 'var(--status-ready)' : 'var(--espresso-20)',
       }}
     >
       <span
         className="inline-block rounded-full bg-white transition-transform"
         style={{
-          width: '15px',
-          height: '15px',
-          transform: checked ? 'translateX(20px)' : 'translateX(3px)',
+          width: '20px',
+          height: '20px',
+          transform: checked ? 'translateX(24px)' : 'translateX(4px)',
           boxShadow: '0 1px 3px rgba(0,0,0,0.18)',
         }}
       />
@@ -394,9 +394,9 @@ function ProductRow({
         />
       </td>
       <td className="px-4 py-3">
-        <div className="flex items-center gap-1.5 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-1.5 justify-end lg:opacity-0 lg:group-hover:opacity-100 transition-opacity">
           <button
-            className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
+            className="w-10 h-10 flex items-center justify-center rounded-lg transition-colors active:opacity-70"
             style={{
               backgroundColor: 'var(--argile)',
               color: 'var(--espresso-60)',
@@ -405,10 +405,10 @@ function ProductRow({
             aria-label="Modifier"
             onClick={() => onEdit(product)}
           >
-            <Pencil className="h-3.5 w-3.5" />
+            <Pencil className="h-4 w-4" />
           </button>
           <button
-            className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
+            className="w-10 h-10 flex items-center justify-center rounded-lg transition-colors active:opacity-70"
             style={{
               backgroundColor: '#FEE2E2',
               color: '#B91C1C',

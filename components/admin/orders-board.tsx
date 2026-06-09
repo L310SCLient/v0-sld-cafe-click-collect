@@ -235,12 +235,12 @@ function KanbanCard({ order, isNew }: { order: Order; isNew: boolean }) {
             </button>
           )}
 
-          {/* Status action button */}
+          {/* Status action button — always visible, bigger touch target */}
           {action && !isArchived && (
             <button
               onClick={handleAction}
               disabled={loading}
-              className="px-3 py-1.5 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+              className="px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 min-h-[40px] active:opacity-80"
               style={
                 action.variant === 'primary'
                   ? {
@@ -434,8 +434,8 @@ export function OrdersBoard({ initialOrders }: OrdersBoardProps) {
 
   return (
     <>
-      {/* Desktop: 4-column Kanban */}
-      <div className="hidden md:grid md:grid-cols-4 gap-4">
+      {/* Desktop/Tablet landscape: 4-column Kanban; Tablet portrait: horizontal snap scroll */}
+      <div className="hidden md:grid md:grid-cols-4 gap-4 lg:gap-5">
         {grouped.map((col) => (
           <div key={col.key}>
             <ColumnHeader
