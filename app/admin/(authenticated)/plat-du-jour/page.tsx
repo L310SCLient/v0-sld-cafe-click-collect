@@ -11,7 +11,8 @@ import { toast } from 'sonner'
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
 type Mode = 'product' | 'custom'
-const BUCKET = 'daily-specials'
+const BUCKET = 'product-images'
+const UPLOAD_PREFIX = 'daily-specials'
 
 function formatPriceCents(cents: number): string {
   return (cents / 100).toFixed(2).replace('.', ',') + ' €'
@@ -226,7 +227,7 @@ export default function PlatDuJourPage() {
   async function uploadImage(file: File): Promise<string | null> {
     const supabase = createClient()
     const ext = file.name.split('.').pop() ?? 'jpg'
-    const path = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`
+    const path = `${UPLOAD_PREFIX}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${ext}`
     const { error } = await supabase.storage
       .from(BUCKET)
       .upload(path, file, { cacheControl: '3600', upsert: false })
