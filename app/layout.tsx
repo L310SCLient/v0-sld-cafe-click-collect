@@ -3,6 +3,7 @@ import { Playfair_Display, Hanken_Grotesk, JetBrains_Mono } from 'next/font/goog
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 import { Header } from '@/components/header'
+import { SiteMain } from '@/components/site-main'
 import { CartProvider } from '@/components/cart-provider'
 import { CartSidebar } from '@/components/cart-sidebar'
 import { Toaster } from '@/components/ui/sonner'
@@ -84,9 +85,7 @@ export default function RootLayout({
       >
         <CartProvider>
           <Header />
-          <main className="min-h-screen pt-16">
-            {children}
-          </main>
+          <SiteMain>{children}</SiteMain>
           <CartSidebar />
         </CartProvider>
         <Toaster position="bottom-right" />

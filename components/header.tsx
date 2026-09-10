@@ -36,7 +36,7 @@ export function Header() {
     return () => window.removeEventListener("scroll", onScroll)
   }, [])
 
-  if (pathname.startsWith("/admin")) return null
+  if (pathname.startsWith("/admin") || pathname.startsWith("/interface")) return null
 
   return (
     <header
