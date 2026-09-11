@@ -145,3 +145,94 @@ export interface RecipeWithItems extends Recipe {
   items: RecipeItemWithIngredient[]
   product: Pick<Product, 'id' | 'name' | 'price'> | null
 }
+
+// ─── Journée : production, ventes, clôture ──────────────────────────────────
+
+export interface ProductionEntry {
+  id: string
+  recipe_id: string
+  service_date: string
+  quantity: number
+  created_at: string
+}
+
+/** Activité d'une recette sur une journée. */
+export interface DailyActivity {
+  service_date: string
+  recipe_id: string
+  produced: number
+  /** Ventes saisies au comptoir (+1). */
+  soldManual: number
+  /** Ventes issues des commandes click & collect, cumulées automatiquement. */
+  soldOnline: number
+  /** Surproduction enregistrée à la clôture. `null` = journée non clôturée. */
+  wasted: number | null
+  /** Coût figé de la surproduction. `null` = inconnu (un prix manquait). */
+  wastedCostCents: number | null
+}
+
+// ─── Factures et fournisseurs ───────────────────────────────────────────────
+
+export type IngredientCategory =
+  | 'legume' | 'fruit' | 'viande' | 'poisson' | 'cremerie'
+  | 'boulangerie' | 'epicerie' | 'boisson' | 'emballage' | 'autre'
+
+export interface Supplier {
+  id: string
+  name: string
+  notes: string | null
+  is_active: boolean
+  created_at: string
+}
+
+export type InvoiceStatus = 'a_lire' | 'lecture' | 'a_valider' | 'validee' | 'echec'
+
+export interface Invoice {
+  id: string
+  supplier_id: string | null
+  invoice_date: string | null
+  invoice_number: string | null
+  total_cents: number | null
+  image_path: string | null
+  status: InvoiceStatus
+  parse_error: string | null
+  parse_model: string | null
+  parsed_at: string | null
+  validated_at: string | null
+  created_at: string
+}
+
+export interface InvoiceLine {
+  id: string
+  invoice_id: string
+  /** Libellé tel qu'écrit sur la facture. Jamais réécrit. */
+  raw_label: string
+  quantity: number | null
+  pack_quantity: number | null
+  base_unit: IngredientUnit | null
+  pack_price_cents: number | null
+  line_total_cents: number | null
+  ingredient_id: string | null
+  /** Confiance du parsing entre 0 et 1. `null` = saisie humaine. */
+  confidence: number | null
+  created_at: string
+}
+
+export interface InvoiceWithLines extends Invoice {
+  supplier: Supplier | null
+  lines: InvoiceLine[]
+}
+
+/** Un prix observé, daté à la date de la facture. */
+export interface IngredientPrice {
+  id: string
+  ingredient_id: string
+  supplier_id: string
+  invoice_line_id: string | null
+  /** Centimes par unité de base, non arrondi. */
+  price_per_base_unit: number
+  pack_quantity: number
+  pack_price_cents: number
+  observed_on: string
+  created_at: string
+}
