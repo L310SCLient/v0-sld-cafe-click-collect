@@ -69,7 +69,10 @@ export const metadata: Metadata = {
         type: 'image/svg+xml',
       },
     ],
-    apple: '/icons/apple-touch-icon.svg',
+    // iOS ignore les SVG pour l'écran d'accueil : sans PNG, « Ajouter à
+    // l'écran d'accueil » produit une icône vide. 180x180 est la taille
+    // attendue par apple-touch-icon.
+    apple: '/apple-icon.png',
   },
 }
 
