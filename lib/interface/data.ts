@@ -2,10 +2,15 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { assertInterfaceAuth } from './auth'
 import type {
   IngredientWithStock,
+  Invoice,
+  InvoiceLine,
+  InvoiceWithLines,
   Product,
   RecipeWithItems,
   StockMovement,
+  Supplier,
 } from '@/types'
+import type { PriceObservation } from './prices'
 
 /**
  * Lectures de l'interface cuisine.
@@ -225,4 +230,168 @@ export async function fetchIngredientMovements(
       created_at: String(movement.created_at),
     }
   })
+}
+
+// ─── Factures et fournisseurs ───────────────────────────────────────────────
+
+function mapSupplier(row: Record<string, unknown>): Supplier {
+  return {
+    id: String(row.id),
+    name: String(row.name),
+    notes: (row.notes ?? null) as string | null,
+    is_active: Boolean(row.is_active),
+    created_at: String(row.created_at),
+  }
+}
+
+function mapInvoice(row: Record<string, unknown>): Invoice {
+  return {
+    id: String(row.id),
+    supplier_id: (row.supplier_id ?? null) as string | null,
+    invoice_date: (row.invoice_date ?? null) as string | null,
+    invoice_number: (row.invoice_number ?? null) as string | null,
+    total_cents: toNullableNumber(row.total_cents),
+    image_path: (row.image_path ?? null) as string | null,
+    status: row.status as Invoice['status'],
+    parse_error: (row.parse_error ?? null) as string | null,
+    parse_model: (row.parse_model ?? null) as string | null,
+    parsed_at: (row.parsed_at ?? null) as string | null,
+    validated_at: (row.validated_at ?? null) as string | null,
+    created_at: String(row.created_at),
+  }
+}
+
+function mapInvoiceLine(row: Record<string, unknown>): InvoiceLine {
+  return {
+    id: String(row.id),
+    invoice_id: String(row.invoice_id),
+    raw_label: String(row.raw_label),
+    quantity: toNullableNumber(row.quantity),
+    pack_quantity: toNullableNumber(row.pack_quantity),
+    base_unit: (row.base_unit ?? null) as InvoiceLine['base_unit'],
+    pack_price_cents: toNullableNumber(row.pack_price_cents),
+    line_total_cents: toNullableNumber(row.line_total_cents),
+    ingredient_id: (row.ingredient_id ?? null) as string | null,
+    confidence: toNullableNumber(row.confidence),
+    created_at: String(row.created_at),
+  }
+}
+
+export async function fetchSuppliers(): Promise<Supplier[]> {
+  await assertInterfaceAuth()
+  const supabase = createAdminClient()
+
+  const { data, error } = await supabase
+    .from('suppliers')
+    .select('*')
+    .eq('is_active', true)
+    .order('name')
+
+  if (error) throw new Error(`Lecture des fournisseurs impossible : ${error.message}`)
+  return (data ?? []).map((row) => mapSupplier(row as Record<string, unknown>))
+}
+
+export async function fetchInvoices(): Promise<(Invoice & { supplier: Supplier | null; lineCount: number })[]> {
+  await assertInterfaceAuth()
+  const supabase = createAdminClient()
+
+  const { data, error } = await supabase
+    .from('invoices')
+    .select('*, supplier:suppliers(*), invoice_lines(id)')
+    .order('created_at', { ascending: false })
+
+  if (error) throw new Error(`Lecture des factures impossible : ${error.message}`)
+
+  return (data ?? []).map((row) => {
+    const invoice = row as Record<string, unknown>
+    const supplier = invoice.supplier as Record<string, unknown> | null
+    const lines = (invoice.invoice_lines ?? []) as unknown[]
+    return {
+      ...mapInvoice(invoice),
+      supplier: supplier ? mapSupplier(supplier) : null,
+      lineCount: lines.length,
+    }
+  })
+}
+
+export async function fetchInvoice(invoiceId: string): Promise<InvoiceWithLines | null> {
+  await assertInterfaceAuth()
+  const supabase = createAdminClient()
+
+  const { data, error } = await supabase
+    .from('invoices')
+    .select('*, supplier:suppliers(*), lines:invoice_lines(*)')
+    .eq('id', invoiceId)
+    .maybeSingle()
+
+  if (error) throw new Error(`Lecture de la facture impossible : ${error.message}`)
+  if (!data) return null
+
+  const invoice = data as Record<string, unknown>
+  const supplier = invoice.supplier as Record<string, unknown> | null
+  const lines = (invoice.lines ?? []) as Record<string, unknown>[]
+
+  return {
+    ...mapInvoice(invoice),
+    supplier: supplier ? mapSupplier(supplier) : null,
+    // Les lignes les moins sûres d'abord : c'est là que la validation humaine
+    // a le plus de valeur.
+    lines: lines
+      .map(mapInvoiceLine)
+      .sort((a, b) => (a.confidence ?? 1) - (b.confidence ?? 1)),
+  }
+}
+
+/** URL signée et temporaire de la photo : le bucket est privé. */
+export async function signInvoiceImage(imagePath: string): Promise<string | null> {
+  await assertInterfaceAuth()
+  const supabase = createAdminClient()
+
+  const { data, error } = await supabase.storage
+    .from('invoices')
+    .createSignedUrl(imagePath, 60 * 10)
+
+  if (error) return null
+  return data?.signedUrl ?? null
+}
+
+/**
+ * Tous les prix observés, groupés par ingrédient — matière première des
+ * comparateurs. Ne renvoie que ce qui vient de factures validées, puisque
+ * c'est la seule chose qui écrit dans ingredient_prices.
+ */
+export async function fetchPriceObservations(): Promise<Map<string, PriceObservation[]>> {
+  await assertInterfaceAuth()
+  const supabase = createAdminClient()
+
+  const { data, error } = await supabase
+    .from('ingredient_prices')
+    .select('ingredient_id, supplier_id, price_per_base_unit, pack_quantity, pack_price_cents, observed_on, supplier:suppliers(name)')
+    .order('observed_on', { ascending: true })
+
+  if (error) throw new Error(`Lecture des prix impossible : ${error.message}`)
+
+  const byIngredient = new Map<string, PriceObservation[]>()
+
+  for (const row of data ?? []) {
+    const price = row as Record<string, unknown>
+    const supplier = price.supplier as { name: string } | { name: string }[] | null
+    const supplierName = Array.isArray(supplier)
+      ? supplier[0]?.name ?? 'Fournisseur inconnu'
+      : supplier?.name ?? 'Fournisseur inconnu'
+
+    const ingredientId = String(price.ingredient_id)
+    const observations = byIngredient.get(ingredientId) ?? []
+    observations.push({
+      supplierId: String(price.supplier_id),
+      supplierName,
+      pricePerBaseUnit: toNumber(price.price_per_base_unit),
+      packQuantity: toNumber(price.pack_quantity),
+      packPriceCents: toNumber(price.pack_price_cents),
+      observedOn: String(price.observed_on),
+    })
+    byIngredient.set(ingredientId, observations)
+  }
+
+  return byIngredient
 }

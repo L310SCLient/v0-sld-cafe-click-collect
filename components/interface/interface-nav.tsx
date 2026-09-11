@@ -3,13 +3,15 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useTransition } from 'react'
-import { Carrot, ClipboardList, LogOut } from 'lucide-react'
+import { Carrot, ClipboardList, FileText, LogOut, Scale } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { interfaceLogout } from '@/app/actions/interface-auth'
 
 const NAV_ITEMS = [
+  { href: '/interface/factures', label: 'Factures', icon: FileText },
   { href: '/interface/ingredients', label: 'Ingrédients', icon: Carrot },
   { href: '/interface/recettes', label: 'Recettes', icon: ClipboardList },
+  { href: '/interface/comparatif', label: 'Comparatif', icon: Scale },
 ]
 
 export function InterfaceNav() {
@@ -32,7 +34,7 @@ export function InterfaceNav() {
           Cuisine
         </span>
 
-        <nav className="flex items-center gap-1 flex-1">
+        <nav className="flex items-center gap-1 flex-1 overflow-x-auto">
           {NAV_ITEMS.map((item) => {
             const isActive = pathname.startsWith(item.href)
             return (
@@ -40,7 +42,7 @@ export function InterfaceNav() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  'flex items-center gap-2 rounded-full px-4 transition-colors',
+                  'flex items-center gap-2 rounded-full px-4 transition-colors shrink-0 whitespace-nowrap',
                   !isActive && 'active:opacity-70'
                 )}
                 style={{
