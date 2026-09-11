@@ -21,8 +21,21 @@ import {
   referenceUnitLabel,
 } from '@/lib/interface/units'
 import { referencePriceCents } from '@/lib/interface/cost'
-import type { IngredientUnit, IngredientWithStock } from '@/types'
+import type { IngredientCategory, IngredientUnit, IngredientWithStock } from '@/types'
 import { FieldLabel, PrimaryButton, inputStyle } from './form-bits'
+
+const CATEGORY_OPTIONS: { value: IngredientCategory; label: string }[] = [
+  { value: 'legume', label: 'Légumes' },
+  { value: 'fruit', label: 'Fruits' },
+  { value: 'viande', label: 'Viandes' },
+  { value: 'poisson', label: 'Poissons' },
+  { value: 'cremerie', label: 'Crémerie' },
+  { value: 'boulangerie', label: 'Boulangerie' },
+  { value: 'epicerie', label: 'Épicerie' },
+  { value: 'boisson', label: 'Boissons' },
+  { value: 'emballage', label: 'Emballages' },
+  { value: 'autre', label: 'Autre' },
+]
 
 /**
  * Création et modification d'un ingrédient.
@@ -55,6 +68,14 @@ export function IngredientDialog({
     ingredient?.pack_price_cents !== null && ingredient?.pack_price_cents !== undefined
       ? (ingredient.pack_price_cents / 100).toFixed(2).replace('.', ',')
       : ''
+  )
+  const [threshold, setThreshold] = useState(
+    ingredient?.low_stock_threshold !== null && ingredient?.low_stock_threshold !== undefined
+      ? formatNumber(ingredient.low_stock_threshold, 3)
+      : ''
+  )
+  const [category, setCategory] = useState<IngredientCategory | ''>(
+    ingredient?.category ?? ''
   )
   const [error, setError] = useState('')
   const [isPending, startTransition] = useTransition()
@@ -92,9 +113,17 @@ export function IngredientDialog({
       return
     }
 
+    const parsedThreshold = threshold.trim() === '' ? null : parseQuantity(threshold)
+    if (threshold.trim() !== '' && (parsedThreshold === null || parsedThreshold < 0)) {
+      setError('Le seuil d’alerte doit être un nombre positif, ou rester vide.')
+      return
+    }
+
     const payload = {
       name: name.trim(),
       base_unit: unit,
+      low_stock_threshold: parsedThreshold,
+      category: category === '' ? null : category,
       price:
         quantityFilled && parsedQuantity !== null && parsedCents !== null
           ? { pack_quantity: parsedQuantity, pack_price_cents: parsedCents }
@@ -161,6 +190,43 @@ export function IngredientDialog({
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <FieldLabel htmlFor="ingredient-category">Famille</FieldLabel>
+              <select
+                id="ingredient-category"
+                value={category}
+                onChange={(event) =>
+                  setCategory(event.target.value as IngredientCategory | '')
+                }
+                style={inputStyle}
+              >
+                <option value="">Non classé</option>
+                {CATEGORY_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <FieldLabel
+                htmlFor="ingredient-threshold"
+                hint="Vide : l’alerte ne se déclenche qu’à zéro, donc trop tard."
+              >
+                Alerte sous ({baseUnitLabel(unit)})
+              </FieldLabel>
+              <input
+                id="ingredient-threshold"
+                value={threshold}
+                onChange={(event) => setThreshold(event.target.value)}
+                style={inputStyle}
+                inputMode="decimal"
+                placeholder="500"
+              />
+            </div>
           </div>
 
           <div

@@ -25,10 +25,18 @@ const priceSchema = z
   })
   .nullable()
 
+const categorySchema = z.enum([
+  'legume', 'fruit', 'viande', 'poisson', 'cremerie',
+  'boulangerie', 'epicerie', 'boisson', 'emballage', 'autre',
+])
+
 const ingredientSchema = z.object({
   name: z.string().trim().min(2, 'Le nom fait au moins deux caractères.').max(120),
   base_unit: unitSchema,
   price: priceSchema,
+  /** `null` = pas de seuil : l'alerte ne se déclenchera qu'à zéro. */
+  low_stock_threshold: z.number().finite().nonnegative().nullable(),
+  category: categorySchema.nullable(),
 })
 
 /** Le prix est un triplet indivisible : quantité + montant + provenance. */
@@ -69,6 +77,8 @@ export async function createIngredient(input: unknown): Promise<ActionResult> {
   const { error } = await supabase.from('ingredients').insert({
     name: parsed.data.name,
     base_unit: parsed.data.base_unit,
+    low_stock_threshold: parsed.data.low_stock_threshold,
+    category: parsed.data.category,
     ...priceColumns(parsed.data.price),
   })
 
@@ -103,6 +113,8 @@ export async function updateIngredient(
     .from('ingredients')
     .update({
       name: parsed.data.name,
+      low_stock_threshold: parsed.data.low_stock_threshold,
+      category: parsed.data.category,
       ...priceColumns(parsed.data.price),
     })
     .eq('id', ingredientId)

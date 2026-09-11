@@ -61,6 +61,8 @@ export async function fetchIngredientsWithStock(): Promise<IngredientWithStock[]
       pack_price_cents: toNullableNumber(ingredient.pack_price_cents),
       price_source: (ingredient.price_source ?? null) as IngredientWithStock['price_source'],
       price_updated_at: (ingredient.price_updated_at ?? null) as string | null,
+      low_stock_threshold: toNullableNumber(ingredient.low_stock_threshold),
+      category: (ingredient.category ?? null) as IngredientWithStock['category'],
       is_active: Boolean(ingredient.is_active),
       created_at: String(ingredient.created_at),
       stock: stockByIngredient.get(String(ingredient.id)) ?? 0,
@@ -117,6 +119,8 @@ export async function fetchRecipes(): Promise<RecipeWithItems[]> {
               price_source: (ingredient.price_source ??
                 null) as IngredientWithStock['price_source'],
               price_updated_at: (ingredient.price_updated_at ?? null) as string | null,
+              low_stock_threshold: toNullableNumber(ingredient.low_stock_threshold),
+              category: (ingredient.category ?? null) as IngredientWithStock['category'],
               is_active: Boolean(ingredient.is_active),
               created_at: String(ingredient.created_at),
             },
@@ -149,6 +153,45 @@ export async function fetchProductOptions(): Promise<Pick<Product, 'id' | 'name'
       price: toNumber(product.price),
     }
   })
+}
+
+/**
+ * Produits du catalogue qui n'ont encore aucune recette.
+ * C'est la liste de départ : les recettes se créent depuis les produits
+ * réellement en vente, pas en retapant leurs noms à la main.
+ */
+export async function fetchProductsWithoutRecipe(): Promise<
+  Pick<Product, 'id' | 'name' | 'price'>[]
+> {
+  await assertInterfaceAuth()
+  const supabase = createAdminClient()
+
+  const [products, recipes] = await Promise.all([
+    supabase.from('products').select('id, name, price').order('name'),
+    supabase.from('recipes').select('product_id').not('product_id', 'is', null),
+  ])
+
+  if (products.error) {
+    throw new Error(`Lecture du catalogue impossible : ${products.error.message}`)
+  }
+  if (recipes.error) {
+    throw new Error(`Lecture des recettes impossible : ${recipes.error.message}`)
+  }
+
+  const alreadyCovered = new Set(
+    (recipes.data ?? []).map((row) => String((row as { product_id: string }).product_id))
+  )
+
+  return (products.data ?? [])
+    .map((row) => {
+      const product = row as Record<string, unknown>
+      return {
+        id: String(product.id),
+        name: String(product.name),
+        price: toNumber(product.price),
+      }
+    })
+    .filter((product) => !alreadyCovered.has(product.id))
 }
 
 /** Derniers mouvements d'un ingrédient, du plus récent au plus ancien. */

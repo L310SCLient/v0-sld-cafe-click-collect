@@ -96,6 +96,10 @@ export interface Ingredient {
   pack_price_cents: number | null
   price_source: PriceSource | null
   price_updated_at: string | null
+  /** Seuil d'alerte, dans `base_unit`. `null` = alerte à zéro seulement. */
+  low_stock_threshold: number | null
+  /** Famille, pour les comparatifs « par matière première ». */
+  category: IngredientCategory | null
   is_active: boolean
   created_at: string
 }

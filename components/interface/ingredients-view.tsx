@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { ArrowLeftRight, Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import { AlertTriangle, ArrowLeftRight, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -16,6 +16,7 @@ import {
 import { deactivateIngredient } from '@/app/actions/ingredients'
 import { referencePriceCents } from '@/lib/interface/cost'
 import { formatCents, formatQuantity, referenceUnitLabel } from '@/lib/interface/units'
+import { needsRestocking, stockLevel } from '@/lib/interface/stock-alert'
 import type { IngredientWithStock } from '@/types'
 import { GhostButton, PriceBadge, inputStyle } from './form-bits'
 import { IngredientDialog } from './ingredient-dialog'
@@ -36,6 +37,7 @@ export function IngredientsView({ ingredients }: { ingredients: IngredientWithSt
   }, [ingredients, search])
 
   const withoutPrice = ingredients.filter((ingredient) => ingredient.price_source === null).length
+  const toRestock = useMemo(() => needsRestocking(ingredients), [ingredients])
 
   function confirmRemoval() {
     if (!removing) return
@@ -79,6 +81,31 @@ export function IngredientsView({ ingredients }: { ingredients: IngredientWithSt
         {withoutPrice > 0 && ` · ${withoutPrice} sans prix`}
       </p>
 
+      {toRestock.length > 0 && (
+        <div
+          className="rounded-2xl px-3 py-3 mb-4"
+          style={{ backgroundColor: '#B4302A14', border: '1px solid #B4302A40' }}
+        >
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 shrink-0" strokeWidth={2} style={{ color: '#B4302A' }} />
+            <p style={{ fontSize: '13px', fontWeight: 600, color: '#B4302A' }}>
+              {toRestock.length} ingrédient{toRestock.length > 1 ? 's' : ''} à réapprovisionner
+            </p>
+          </div>
+          <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1">
+            {toRestock.map((ingredient) => (
+              <li
+                key={ingredient.id}
+                style={{ fontSize: '12px', fontFamily: 'var(--font-mono)', color: '#B4302A' }}
+              >
+                {ingredient.name} · {formatQuantity(ingredient.stock, ingredient.base_unit)}
+                {stockLevel(ingredient) === 'rupture' ? ' (rupture)' : ''}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="relative mb-4">
         <Search
           className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none"
@@ -104,6 +131,7 @@ export function IngredientsView({ ingredients }: { ingredients: IngredientWithSt
         <ul className="space-y-2">
           {filtered.map((ingredient) => {
             const price = referencePriceCents(ingredient)
+            const level = stockLevel(ingredient)
             return (
               <li
                 key={ingredient.id}
@@ -126,11 +154,15 @@ export function IngredientsView({ ingredients }: { ingredients: IngredientWithSt
                       style={{
                         fontSize: '13px',
                         fontFamily: 'var(--font-mono)',
-                        color:
-                          ingredient.stock <= 0 ? '#B4302A' : 'var(--espresso-60)',
+                        color: level === 'ok' ? 'var(--espresso-60)' : '#B4302A',
+                        fontWeight: level === 'ok' ? 400 : 600,
                       }}
                     >
                       stock {formatQuantity(ingredient.stock, ingredient.base_unit)}
+                      {level === 'rupture' && ' · rupture'}
+                      {level === 'bas' &&
+                        ingredient.low_stock_threshold !== null &&
+                        ` · sous le seuil de ${formatQuantity(ingredient.low_stock_threshold, ingredient.base_unit)}`}
                     </p>
                   </div>
 

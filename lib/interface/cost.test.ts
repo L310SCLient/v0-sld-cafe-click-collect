@@ -16,6 +16,8 @@ function ingredient(overrides: Partial<Ingredient> & { name: string }): Ingredie
     pack_price_cents: null,
     price_source: null,
     price_updated_at: null,
+    low_stock_threshold: null,
+    category: null,
     is_active: true,
     created_at: '2026-01-01T00:00:00Z',
     ...overrides,
