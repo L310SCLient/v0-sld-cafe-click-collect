@@ -1,6 +1,6 @@
 # État d'avancement
 
-Dernière mise à jour : 2026-09-11
+Dernière mise à jour : 2026-09-11 (2)
 
 ## Bloquants
 
@@ -12,20 +12,26 @@ Dernière mise à jour : 2026-09-11
    les migrations ne peuvent s'appliquer qu'à la main dans l'éditeur SQL du dashboard.
 2. **Un token GitHub personnel est en clair dans `.git/config`** (URL du remote, préfixe
    `ghp_`). À révoquer, et repasser le remote en SSH.
-3. **Migration `003_ingredients_recipes.sql` non appliquée.** Vérifié le 2026-09-11 :
-   `ingredients`, `recipes`, `recipe_items`, `stock_movements` et `pin_attempts` renvoient
-   toutes 404. Strictement additive, rollback documenté en tête de fichier. Sans elle,
-   `/interface` refuse la connexion (fail closed sur le compteur de tentatives).
+3. ~~Migration 003~~ **Appliquée le 2026-09-11.** 19 vérifications passées contre la
+   base réelle (contraintes de prix, somme des mouvements, RESTRICT, étanchéité RLS).
+   **Restent à appliquer : `004_journee_production_ventes.sql` et
+   `005_factures_fournisseurs.sql`.** Strictement additives, rollback en tête de fichier.
+4. **Bucket de stockage `invoices` à créer** (Supabase > Storage > New bucket, **privé**).
+   Sans lui, l'import de photo de facture échoue avec un message explicite. Il doit rester
+   privé : une photo de facture expose les prix négociés.
+5. **`ANTHROPIC_API_KEY` absente.** Bloque la seule lecture automatique des factures.
+   L'import, la saisie manuelle des lignes, la validation et les comparatifs fonctionnent
+   sans elle ; l'écran affiche « lecture automatique hors service ».
 4. **`INTERFACE_PIN` non définie sur Vercel.** Posée à `1234` en local — à changer.
 
 ## Interface cuisine — 4 briques
 
 | Brique | État |
 |---|---|
-| **A** Socle `/interface` + code 4 chiffres | Livré, PR #1 — écran vérifié, connexion NON VÉRIFIÉE (migration 003 non appliquée) |
-| **B** Ingrédients + Recettes avec coûts | Livré, PR #1 — NON VÉRIFIÉ (migration 003 non appliquée) |
-| **C** Stock du jour, déduction ventes, pertes, moyennes semaine/mois | À faire |
-| **D** Factures photographiées et parsées, comparatifs fournisseurs/produits | À faire |
+| **A** Socle `/interface` + code 4 chiffres | **Livré et vérifié à l'écran** — connexion au code, session ouverte |
+| **B** Ingrédients + Recettes avec coûts | **Livré et vérifié à l'écran** — création d'ingrédient, prix au kg, réception de stock. Recettes créées depuis les produits du site. Alerte de stock bas avec seuil. |
+| **C** Journée : production, ventes, clôture, pertes, moyennes | Schéma (004) écrit. Écrans et actions **à faire** |
+| **D** Factures photographiées et parsées, comparatifs fournisseurs | Code livré. NON VÉRIFIÉ : migration 005, bucket et clé API manquants |
 
 Le journal de mouvements et la provenance des prix sont déjà en place pour que C et D
 se branchent sans migration ni reprise d'historique.
@@ -40,11 +46,27 @@ se branchent sans migration ni reprise d'historique.
 - Pas de sous-recettes dans ce lot (une préparation maison se saisit comme ingrédient).
 - `/interface` a sa propre porte, distincte de `/admin`.
 
-### Reste à décider pour le lot C
+### Décisions actées pour le lot C
 
-- Source de vérité des ventes : les `orders` du click & collect ne couvrent qu'une part
-  des ventes réelles du café. Sans réponse, la déduction automatique du stock sera
-  partielle — et devra être annoncée comme telle à l'écran.
+- Les ingrédients baissent **à la production**, pas à la vente : un sandwich invendu a
+  coûté ses ingrédients.
+- Ventes = compteur manuel `+1` **cumulé** avec les commandes click & collect.
+  Trou connu : dans `orders.items`, une formule porte le `product_id` de la formule et les
+  produits choisis n'existent qu'en texte dans `name`
+  (`components/checkout-modal.tsx:98`). Ces ventes ne peuvent pas être créditées
+  automatiquement ; l'écran devra les annoncer comme non comptées.
+- Clôture de journée : le reste devient de la surproduction, avec son coût figé à cet
+  instant.
+- Alerte de stock : seuil par ingrédient, facultatif ; à défaut, alerte à zéro.
+
+### Décisions actées pour le lot D
+
+- Une facture lue par l'IA n'est **jamais** une vérité : statut `a_valider`, et aucun prix
+  n'entre en base avant confirmation humaine.
+- Les prix sont datés à la **date de la facture**, pas à la date d'import.
+- Le prix courant d'un ingrédient vient du relevé le plus récent de son historique, donc
+  une facture ancienne importée tardivement n'écrase rien.
+- « Moins cher » exige deux fournisseurs ; une hausse exige deux dates différentes.
 
 ## Dette repérée, non traitée
 
