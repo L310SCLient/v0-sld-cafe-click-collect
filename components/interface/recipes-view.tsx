@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { ChevronDown, Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import { ChevronDown, LayoutGrid, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,19 +20,24 @@ import type { IngredientWithStock, Product, RecipeWithItems } from '@/types'
 import { GhostButton, inputStyle } from './form-bits'
 import { RecipeDialog } from './recipe-dialog'
 import { RecipeEditor } from './recipe-editor'
+import { RecipesFromCatalogue } from './recipes-from-catalogue'
 
 export function RecipesView({
   recipes,
   ingredients,
   products,
+  productsWithoutRecipe,
 }: {
   recipes: RecipeWithItems[]
   ingredients: IngredientWithStock[]
   products: Pick<Product, 'id' | 'name' | 'price'>[]
+  /** Produits du site qui n'ont encore aucune recette. */
+  productsWithoutRecipe: Pick<Product, 'id' | 'name' | 'price'>[]
 }) {
   const [search, setSearch] = useState('')
   const [expanded, setExpanded] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
+  const [isImporting, setIsImporting] = useState(false)
   const [editing, setEditing] = useState<RecipeWithItems | null>(null)
   const [removing, setRemoving] = useState<RecipeWithItems | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -63,25 +68,56 @@ export function RecipesView({
         <h1 className="font-serif" style={{ fontSize: '24px', color: 'var(--espresso)' }}>
           Recettes
         </h1>
-        <button
-          type="button"
-          onClick={() => setIsCreating(true)}
-          className="flex items-center gap-1.5 rounded-full px-4 shrink-0 active:scale-[0.98] transition-transform"
-          style={{
-            minHeight: '42px',
-            backgroundColor: 'var(--terracotta)',
-            color: '#ffffff',
-            fontSize: '14px',
-            fontWeight: 600,
-          }}
-        >
-          <Plus className="h-4 w-4" strokeWidth={2.2} />
-          Ajouter
-        </button>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => setIsImporting(true)}
+            className="flex items-center gap-1.5 rounded-full px-4 active:scale-[0.98] transition-transform"
+            style={{
+              minHeight: '42px',
+              border: '1px solid var(--espresso-20)',
+              color: 'var(--espresso)',
+              fontSize: '14px',
+              fontWeight: 600,
+            }}
+          >
+            <LayoutGrid className="h-4 w-4" strokeWidth={1.9} />
+            Catalogue
+            {productsWithoutRecipe.length > 0 && (
+              <span
+                className="rounded-full px-1.5"
+                style={{
+                  backgroundColor: 'var(--terracotta)',
+                  color: '#ffffff',
+                  fontSize: '11px',
+                }}
+              >
+                {productsWithoutRecipe.length}
+              </span>
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsCreating(true)}
+            className="flex items-center gap-1.5 rounded-full px-4 active:scale-[0.98] transition-transform"
+            style={{
+              minHeight: '42px',
+              backgroundColor: 'var(--terracotta)',
+              color: '#ffffff',
+              fontSize: '14px',
+              fontWeight: 600,
+            }}
+          >
+            <Plus className="h-4 w-4" strokeWidth={2.2} />
+            Ajouter
+          </button>
+        </div>
       </div>
 
       <p className="mb-4" style={{ fontSize: '12px', color: 'var(--espresso-60)' }}>
         {recipes.length} recette{recipes.length > 1 ? 's' : ''}
+        {productsWithoutRecipe.length > 0 &&
+          ` · ${productsWithoutRecipe.length} produit${productsWithoutRecipe.length > 1 ? 's' : ''} du site sans recette`}
       </p>
 
       <div className="relative mb-4">
@@ -115,8 +151,8 @@ export function RecipesView({
               lineHeight: 1.45,
             }}
           >
-            Crée une recette, rattache-la à un produit du catalogue si elle se vend telle quelle,
-            puis ajoute ses ingrédients.
+            Pars du catalogue : le bouton « Catalogue » crée les recettes des produits en vente
+            sur le site, déjà rattachées. Tu n’ajoutes ensuite que leurs ingrédients.
           </p>
         </div>
       ) : (
@@ -218,6 +254,14 @@ export function RecipesView({
             )
           })}
         </ul>
+      )}
+
+      {isImporting && (
+        <RecipesFromCatalogue
+          open
+          onOpenChange={(open) => !open && setIsImporting(false)}
+          products={productsWithoutRecipe}
+        />
       )}
 
       {isCreating && (

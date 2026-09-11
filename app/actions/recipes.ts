@@ -123,3 +123,81 @@ export async function removeRecipeItem(itemId: string): Promise<ActionResult> {
   revalidate()
   return { message: 'Ingrédient retiré de la recette.' }
 }
+
+const fromProductsSchema = z.object({
+  product_ids: z.array(z.string().uuid()).min(1, 'Choisis au moins un produit.').max(300),
+})
+
+/**
+ * Crée les recettes manquantes depuis les produits du catalogue.
+ *
+ * Une recette porte le nom du produit et lui est rattachée d'emblée : c'est
+ * le rattachement qui permettra la marge et la déduction du stock par les
+ * ventes. Les produits dont le nom est déjà pris par une recette existante
+ * sont ignorés et signalés — plutôt que de faire échouer tout le lot, ou de
+ * créer un doublon silencieux.
+ */
+export async function createRecipesFromProducts(input: unknown): Promise<ActionResult> {
+  const denied = await guardInterface()
+  if (denied) return denied
+
+  const parsed = fromProductsSchema.safeParse(input)
+  if (!parsed.success) {
+    return { error: parsed.error.issues[0]?.message ?? 'Saisie invalide.' }
+  }
+
+  const supabase = createAdminClient()
+
+  const [products, existing] = await Promise.all([
+    supabase.from('products').select('id, name').in('id', parsed.data.product_ids),
+    supabase.from('recipes').select('name, product_id'),
+  ])
+
+  if (products.error) return { error: products.error.message }
+  if (existing.error) return { error: existing.error.message }
+
+  const takenNames = new Set(
+    (existing.data ?? []).map((row) =>
+      String((row as { name: string }).name).toLowerCase()
+    )
+  )
+  const coveredProducts = new Set(
+    (existing.data ?? [])
+      .map((row) => (row as { product_id: string | null }).product_id)
+      .filter((id): id is string => Boolean(id))
+  )
+
+  const skipped: string[] = []
+  const toInsert: { name: string; product_id: string; portions: number }[] = []
+
+  for (const row of products.data ?? []) {
+    const product = row as { id: string; name: string }
+    if (coveredProducts.has(product.id)) continue
+    if (takenNames.has(product.name.toLowerCase())) {
+      skipped.push(product.name)
+      continue
+    }
+    toInsert.push({ name: product.name, product_id: product.id, portions: 1 })
+  }
+
+  if (toInsert.length === 0) {
+    return {
+      error:
+        skipped.length > 0
+          ? `Rien à créer : une recette porte déjà ce nom (${skipped.join(', ')}).`
+          : 'Rien à créer : ces produits ont déjà une recette.',
+    }
+  }
+
+  const { error } = await supabase.from('recipes').insert(toInsert)
+  if (error) return { error: error.message }
+
+  revalidate()
+  const created = `${toInsert.length} recette${toInsert.length > 1 ? 's' : ''} créée${toInsert.length > 1 ? 's' : ''}`
+  return {
+    message:
+      skipped.length > 0
+        ? `${created}. Ignoré${skipped.length > 1 ? 's' : ''} (nom déjà pris) : ${skipped.join(', ')}.`
+        : `${created}.`,
+  }
+}
