@@ -1,5 +1,5 @@
 # STATUS — v0-sld-cafe-click-collect
-Mis à jour : 2026-09-11, 22:17
+Mis à jour : 2026-09-12, 22:56
 
 ## Position
 Branche `feat/interface-ingredients-recettes` · **17 commits d'avance sur `main`, 0 de retard** ·
@@ -46,14 +46,15 @@ Le build confirme par l'absence de route que le lot C n'est pas écrit : on voit
 `/interface/factures/[id]`, `/interface/comparatif` — **pas de `/interface/journee`**.
 
 ## En cours
-Service worker corrigé, testé et vérifié dans Chrome, non commité. Prochain chantier : import de
-recettes par fichier, à cadrer. Lot D : 005 appliquée mais bucket manquant, **NON VÉRIFIÉ** sur une vraie
-facture. Lot C : schéma 004 appliqué, écrans à écrire.
+Lot E écrit : import de recettes par fichier (migration 006, lecteur Claude, deux écrans de
+validation) et retrait de la création depuis le catalogue. **NON VÉRIFIÉ contre la base** : la 006
+n'est pas appliquée. Lot D : prêt, jamais essayé sur une vraie facture. Lot C : à écrire.
 
 ## Bloqué
-- **Bucket de stockage `invoices` à créer** (Supabase > Storage > New bucket, **privé**). On attend
-  Liam. Sans lui l'import de photo échoue avec un message explicite. Privé impérativement : une
-  photo de facture expose les prix négociés.
+- **Migration `006_import_recettes.sql` non appliquée.** On attend Liam, dans l'éditeur SQL du
+  dashboard : aucune API ne permet de créer des tables. Sans elle, le bouton « Importer des fiches »
+  échoue et l'écran Recettes affiche un bandeau « import hors service » — les recettes restent
+  justes. Strictement additive, rollback en tête de fichier.
 - **`ANTHROPIC_API_KEY`** — posée dans `.env.local` le 2026-09-11 et **acceptée par l'API**
   (`models.list` : 11 modèles, `claude-opus-5` inclus, aucun token consommé). Sur Vercel : NON VÉRIFIÉ
   (pas de CLI Vercel). Elle doit être cochée pour l'environnement **Preview** : le code des factures
@@ -66,11 +67,11 @@ facture. Lot C : schéma 004 appliqué, écrans à écrire.
   en local, à ne pas laisser telle quelle en production.
 - **Un token GitHub personnel est en clair dans `.git/config`** (URL du remote, préfixe `ghp_`).
   On attend que Liam le révoque et repasse le remote en SSH.
-- **Lot D non vérifiable à l'écran** tant que le bucket `invoices` n'existe pas.
+- **Lots D et E non vérifiés à l'écran** : il manque une vraie facture pour D, et la migration 006 pour E.
 
 ## Prochaine action
-Crée le bucket privé `invoices` dans Supabase (Storage > New bucket) : c'est le dernier prérequis avant
-de tester l'import d'une vraie facture.
+Applique `006_import_recettes.sql` dans l'éditeur SQL Supabase, puis importe une vraie fiche recette
+et une vraie facture : c'est la seule façon de vérifier les lots D et E contre la base.
 
 ---
 
@@ -81,7 +82,8 @@ de tester l'import d'une vraie facture.
 | **A** Socle `/interface` + code 4 chiffres | **Livré et vérifié à l'écran** — connexion au code, session ouverte |
 | **B** Ingrédients + Recettes avec coûts | **Livré et vérifié à l'écran** — création d'ingrédient, prix au kg, réception de stock. Recettes créées depuis les produits du site. Alerte de stock bas avec seuil. |
 | **C** Journée : production, ventes, clôture, pertes, moyennes | Schéma (004) écrit. Écrans et actions **à faire** |
-| **D** Factures photographiées et parsées, comparatifs fournisseurs | Code livré et buildé. **NON VÉRIFIÉ** : migration 005, bucket et clé API manquants |
+| **D** Factures photographiées et parsées, comparatifs fournisseurs | Code livré, 005 appliquée, bucket `invoices` créé et privé, clé API valide. **NON VÉRIFIÉ** : aucune facture réelle passée |
+| **E** Import de recettes par fichier | Code livré, `tsc` + 100 tests + build verts. **NON VÉRIFIÉ** : migration 006 non appliquée |
 
 Le journal de mouvements et la provenance des prix sont déjà en place pour que C et D se branchent
 sans migration supplémentaire ni reprise d'historique.
@@ -130,9 +132,18 @@ sans migration supplémentaire ni reprise d'historique.
 
 ### Décisions actées — recettes (2026-09-11)
 
-- La création de recettes depuis les produits de la carte sera **retirée** : jugée inutile par Liam.
-- Remplacée par un **import de fichiers de recettes**, tous formats (Excel, CSV, PDF, photos, Word), lu
-  directement par Claude via la clé API, dans l'app, sans file d'attente. À cadrer avant d'écrire.
+- Création depuis les produits de la carte : **retirée** (composant, bouton, action et lecture).
+- Les fiches **remplissent** les 97 recettes existantes par correspondance de nom, casse ignorée ;
+  sans correspondance, elles créent la recette. Les 97 noms sont distincts : aucune ambiguïté.
+- Import en **deux temps** : liste d'ingrédients dédoublonnée sur tout le lot, validée une fois, puis
+  les recettes. Rien n'entre dans `recipes` avant validation.
+- **Rendement** lu sur la fiche et corrigible ; absent, la recette porte `portions_confirmed = false`
+  (« à préciser ») — jamais 1 supposé, qui fausserait tous les coûts à la pièce.
+- Une ligne **non chiffrable** (« une pincée », unité incompatible avec l'ingrédient) crée quand même
+  l'ingrédient mais part dans `recipe_missing_items` : la recette est incomplète et son coût est masqué.
+- Fichiers conservés dans le bucket privé **`recipe-files`** (créé et vérifié privé le 2026-09-12).
+- Formats lus : **images, PDF, CSV, TXT, MD**. Word et Excel sont refusés à l'envoi avec un message
+  explicite (« enregistre-le en PDF ou en CSV ») plutôt que d'échouer à la lecture.
 
 ## Dette repérée, non traitée
 
