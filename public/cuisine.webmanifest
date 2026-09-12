@@ -1,0 +1,29 @@
+{
+  "name": "Cuisine — SLD Café",
+  "short_name": "Cuisine",
+  "description": "Ingrédients, recettes, factures et comparatifs du SLD Café",
+  "start_url": "/interface",
+  "scope": "/interface",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#F7F2E9",
+  "background_color": "#F7F2E9",
+  "icons": [
+    {
+      "src": "/apple-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-192x192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/icons/icon-512x512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
