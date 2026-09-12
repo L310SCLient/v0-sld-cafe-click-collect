@@ -124,7 +124,7 @@ export function RecipeEditor({
                   disabled={isPending}
                   aria-label={`Retirer ${line.name}`}
                   className="shrink-0 flex items-center justify-center rounded-full active:opacity-60 disabled:opacity-30"
-                  style={{ width: '30px', height: '30px', color: 'var(--espresso-40)' }}
+                  style={{ width: '44px', height: '44px', color: 'var(--espresso-40)' }}
                 >
                   <X className="h-3.5 w-3.5" strokeWidth={2} />
                 </button>
