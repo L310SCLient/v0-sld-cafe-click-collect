@@ -2,7 +2,7 @@
 
 import { useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { ChevronDown, LayoutGrid, Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import { ChevronDown, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,29 +15,29 @@ import {
 } from '@/components/ui/alert-dialog'
 import { deactivateRecipe } from '@/app/actions/recipes'
 import { computeMargin, computeRecipeCost } from '@/lib/interface/cost'
+import { costIsDisplayable } from '@/lib/interface/recipe-import'
 import { formatCents } from '@/lib/interface/units'
 import type { IngredientWithStock, Product, RecipeWithItems } from '@/types'
 import { GhostButton, inputStyle } from './form-bits'
 import { RecipeDialog } from './recipe-dialog'
 import { RecipeEditor } from './recipe-editor'
-import { RecipesFromCatalogue } from './recipes-from-catalogue'
+import { RecipeImportButton } from './recipe-import-button'
 
 export function RecipesView({
   recipes,
   ingredients,
   products,
-  productsWithoutRecipe,
+  importAvailable,
 }: {
   recipes: RecipeWithItems[]
   ingredients: IngredientWithStock[]
   products: Pick<Product, 'id' | 'name' | 'price'>[]
-  /** Produits du site qui n'ont encore aucune recette. */
-  productsWithoutRecipe: Pick<Product, 'id' | 'name' | 'price'>[]
+  /** `false` = migration 006 non appliquée : l'import est hors service. */
+  importAvailable: boolean
 }) {
   const [search, setSearch] = useState('')
   const [expanded, setExpanded] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
-  const [isImporting, setIsImporting] = useState(false)
   const [editing, setEditing] = useState<RecipeWithItems | null>(null)
   const [removing, setRemoving] = useState<RecipeWithItems | null>(null)
   const [isPending, startTransition] = useTransition()
@@ -69,33 +69,7 @@ export function RecipesView({
           Recettes
         </h1>
         <div className="flex items-center gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={() => setIsImporting(true)}
-            className="flex items-center gap-1.5 rounded-full px-4 active:scale-[0.98] transition-transform"
-            style={{
-              minHeight: '42px',
-              border: '1px solid var(--espresso-20)',
-              color: 'var(--espresso)',
-              fontSize: '14px',
-              fontWeight: 600,
-            }}
-          >
-            <LayoutGrid className="h-4 w-4" strokeWidth={1.9} />
-            Catalogue
-            {productsWithoutRecipe.length > 0 && (
-              <span
-                className="rounded-full px-1.5"
-                style={{
-                  backgroundColor: 'var(--terracotta)',
-                  color: '#ffffff',
-                  fontSize: '11px',
-                }}
-              >
-                {productsWithoutRecipe.length}
-              </span>
-            )}
-          </button>
+          <RecipeImportButton />
           <button
             type="button"
             onClick={() => setIsCreating(true)}
@@ -116,9 +90,23 @@ export function RecipesView({
 
       <p className="mb-4" style={{ fontSize: '12px', color: 'var(--espresso-60)' }}>
         {recipes.length} recette{recipes.length > 1 ? 's' : ''}
-        {productsWithoutRecipe.length > 0 &&
-          ` · ${productsWithoutRecipe.length} produit${productsWithoutRecipe.length > 1 ? 's' : ''} du site sans recette`}
       </p>
+
+      {!importAvailable && (
+        <div
+          className="rounded-xl p-3 mb-4"
+          style={{
+            backgroundColor: 'rgba(180,48,42,0.08)',
+            border: '1px solid rgba(180,48,42,0.25)',
+          }}
+        >
+          <p style={{ fontSize: '12px', color: '#B4302A', lineHeight: 1.45 }}>
+            Import de fiches hors service : la migration 006 n’est pas appliquée dans Supabase.
+            Les recettes ci-dessous restent justes, mais aucune ligne laissée de côté ne peut être
+            affichée.
+          </p>
+        </div>
+      )}
 
       <div className="relative mb-4">
         <Search
@@ -151,8 +139,8 @@ export function RecipesView({
               lineHeight: 1.45,
             }}
           >
-            Pars du catalogue : le bouton « Catalogue » crée les recettes des produits en vente
-            sur le site, déjà rattachées. Tu n’ajoutes ensuite que leurs ingrédients.
+Importe tes fiches : le bouton « Importer des fiches » lit tes fichiers, te fait
+            valider les ingrédients puis les recettes, et n’écrit rien avant.
           </p>
         </div>
       ) : (
@@ -187,11 +175,25 @@ export function RecipesView({
                       {' · '}
                       {recipe.items.length} ingrédient{recipe.items.length > 1 ? 's' : ''}
                       {recipe.portions > 1 && ` · ${recipe.portions} portions`}
+                      {!recipe.portions_confirmed && (
+                        <span style={{ color: '#B4302A' }}> · rendement à préciser</span>
+                      )}
+                      {recipe.missing.length > 0 && (
+                        <span style={{ color: '#B4302A' }}>
+                          {' · '}
+                          {recipe.missing.length} ligne{recipe.missing.length > 1 ? 's' : ''} sans
+                          quantité
+                        </span>
+                      )}
                     </p>
                   </div>
 
                   <div className="text-right shrink-0">
-                    {cost.status === 'complete' ? (
+                    {cost.status === 'complete' &&
+                    costIsDisplayable({
+                      missingItems: recipe.missing.length,
+                      portionsConfirmed: recipe.portions_confirmed,
+                    }) ? (
                       <>
                         <p
                           style={{
@@ -254,14 +256,6 @@ export function RecipesView({
             )
           })}
         </ul>
-      )}
-
-      {isImporting && (
-        <RecipesFromCatalogue
-          open
-          onOpenChange={(open) => !open && setIsImporting(false)}
-          products={productsWithoutRecipe}
-        />
       )}
 
       {isCreating && (

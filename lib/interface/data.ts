@@ -6,6 +6,12 @@ import type {
   InvoiceLine,
   InvoiceWithLines,
   Product,
+  RecipeImportDetail,
+  RecipeImportFile,
+  RecipeImportIngredient,
+  RecipeImportLine,
+  RecipeImportRecipeWithLines,
+  RecipeMissingItem,
   RecipeWithItems,
   StockMovement,
   Supplier,
@@ -102,10 +108,16 @@ export async function fetchRecipes(): Promise<RecipeWithItems[]> {
       name: String(recipe.name),
       product_id: (recipe.product_id ?? null) as string | null,
       portions: toNumber(recipe.portions),
+      // La colonne arrive avec la migration 006 : avant, une recette saisie à
+      // la main a toujours un rendement assumé.
+      portions_confirmed: recipe.portions_confirmed === undefined
+        ? true
+        : Boolean(recipe.portions_confirmed),
       notes: (recipe.notes ?? null) as string | null,
       is_active: Boolean(recipe.is_active),
       created_at: String(recipe.created_at),
       product: (recipe.product ?? null) as RecipeWithItems['product'],
+      missing: [],
       items: items
         .map((item) => {
           const ingredient = item.ingredient as Record<string, unknown>
@@ -158,45 +170,6 @@ export async function fetchProductOptions(): Promise<Pick<Product, 'id' | 'name'
       price: toNumber(product.price),
     }
   })
-}
-
-/**
- * Produits du catalogue qui n'ont encore aucune recette.
- * C'est la liste de départ : les recettes se créent depuis les produits
- * réellement en vente, pas en retapant leurs noms à la main.
- */
-export async function fetchProductsWithoutRecipe(): Promise<
-  Pick<Product, 'id' | 'name' | 'price'>[]
-> {
-  await assertInterfaceAuth()
-  const supabase = createAdminClient()
-
-  const [products, recipes] = await Promise.all([
-    supabase.from('products').select('id, name, price').order('name'),
-    supabase.from('recipes').select('product_id').not('product_id', 'is', null),
-  ])
-
-  if (products.error) {
-    throw new Error(`Lecture du catalogue impossible : ${products.error.message}`)
-  }
-  if (recipes.error) {
-    throw new Error(`Lecture des recettes impossible : ${recipes.error.message}`)
-  }
-
-  const alreadyCovered = new Set(
-    (recipes.data ?? []).map((row) => String((row as { product_id: string }).product_id))
-  )
-
-  return (products.data ?? [])
-    .map((row) => {
-      const product = row as Record<string, unknown>
-      return {
-        id: String(product.id),
-        name: String(product.name),
-        price: toNumber(product.price),
-      }
-    })
-    .filter((product) => !alreadyCovered.has(product.id))
 }
 
 /** Derniers mouvements d'un ingrédient, du plus récent au plus ancien. */
@@ -394,4 +367,170 @@ export async function fetchPriceObservations(): Promise<Map<string, PriceObserva
   }
 
   return byIngredient
+}
+
+// ─── Import de recettes par fichier ─────────────────────────────────────────
+
+/** Vrai si la migration 006 est passée : les tables d'import existent. */
+function tableAbsente(message: string): boolean {
+  return message.includes('Could not find the table') || message.includes('does not exist')
+}
+
+/**
+ * Lignes laissées de côté, par recette.
+ *
+ * Renvoie `null` — et non une map vide — quand la migration 006 n'est pas
+ * appliquée : l'écran doit pouvoir dire « fonction indisponible » plutôt que
+ * d'afficher des recettes faussement complètes.
+ */
+export async function fetchRecipeMissingItems(): Promise<Map<string, RecipeMissingItem[]> | null> {
+  await assertInterfaceAuth()
+  const supabase = createAdminClient()
+
+  const { data, error } = await supabase
+    .from('recipe_missing_items')
+    .select('*')
+    .order('created_at', { ascending: true })
+
+  if (error) {
+    if (tableAbsente(error.message)) return null
+    throw new Error(`Lecture des lignes manquantes impossible : ${error.message}`)
+  }
+
+  const byRecipe = new Map<string, RecipeMissingItem[]>()
+  for (const row of (data ?? []) as Record<string, unknown>[]) {
+    const item: RecipeMissingItem = {
+      id: String(row.id),
+      recipe_id: String(row.recipe_id),
+      ingredient_id: (row.ingredient_id ?? null) as string | null,
+      raw_label: String(row.raw_label),
+      raw_quantity: (row.raw_quantity ?? null) as string | null,
+      created_at: String(row.created_at),
+    }
+    byRecipe.set(item.recipe_id, [...(byRecipe.get(item.recipe_id) ?? []), item])
+  }
+  return byRecipe
+}
+
+/** Lots d'import en cours ou terminés, du plus récent au plus ancien. */
+export async function fetchRecipeImports(): Promise<
+  { id: string; status: string; created_at: string; fileCount: number }[] | null
+> {
+  await assertInterfaceAuth()
+  const supabase = createAdminClient()
+
+  const { data, error } = await supabase
+    .from('recipe_imports')
+    .select('id, status, created_at, recipe_import_files(id)')
+    .order('created_at', { ascending: false })
+    .limit(20)
+
+  if (error) {
+    if (tableAbsente(error.message)) return null
+    throw new Error(`Lecture des imports impossible : ${error.message}`)
+  }
+
+  return (data ?? []).map((row) => {
+    const item = row as Record<string, unknown>
+    return {
+      id: String(item.id),
+      status: String(item.status),
+      created_at: String(item.created_at),
+      fileCount: ((item.recipe_import_files ?? []) as unknown[]).length,
+    }
+  })
+}
+
+/** Un lot avec ses fichiers, son dictionnaire d'ingrédients et ses recettes. */
+export async function fetchRecipeImport(importId: string): Promise<RecipeImportDetail | null> {
+  await assertInterfaceAuth()
+  const supabase = createAdminClient()
+
+  const { data, error } = await supabase
+    .from('recipe_imports')
+    .select(
+      `*,
+       files:recipe_import_files(*),
+       ingredients:recipe_import_ingredients(*),
+       recipes:recipe_import_recipes(*, lines:recipe_import_lines(*), matched_recipe:recipes(id, name))`
+    )
+    .eq('id', importId)
+    .maybeSingle()
+
+  if (error) {
+    if (tableAbsente(error.message)) return null
+    throw new Error(`Lecture du lot impossible : ${error.message}`)
+  }
+  if (!data) return null
+
+  const row = data as Record<string, unknown>
+  const files = ((row.files ?? []) as Record<string, unknown>[])
+    .map((file) => ({
+      id: String(file.id),
+      import_id: String(file.import_id),
+      file_path: String(file.file_path),
+      original_name: String(file.original_name),
+      media_type: String(file.media_type),
+      status: file.status as RecipeImportFile['status'],
+      parse_error: (file.parse_error ?? null) as string | null,
+      parsed_at: (file.parsed_at ?? null) as string | null,
+      created_at: String(file.created_at),
+    }))
+    .sort((a, b) => a.original_name.localeCompare(b.original_name, 'fr'))
+
+  const ingredients = ((row.ingredients ?? []) as Record<string, unknown>[])
+    .map((entry) => ({
+      id: String(entry.id),
+      import_id: String(entry.import_id),
+      raw_name: String(entry.raw_name),
+      normalized_name: String(entry.normalized_name),
+      base_unit: (entry.base_unit ?? null) as RecipeImportIngredient['base_unit'],
+      ingredient_id: (entry.ingredient_id ?? null) as string | null,
+      decision: entry.decision as RecipeImportIngredient['decision'],
+      occurrences: toNumber(entry.occurrences),
+      created_at: String(entry.created_at),
+    }))
+    .sort((a, b) => b.occurrences - a.occurrences || a.raw_name.localeCompare(b.raw_name, 'fr'))
+
+  const recipes = ((row.recipes ?? []) as Record<string, unknown>[])
+    .map((staged) => ({
+      id: String(staged.id),
+      import_id: String(staged.import_id),
+      file_id: (staged.file_id ?? null) as string | null,
+      raw_name: String(staged.raw_name),
+      matched_recipe_id: (staged.matched_recipe_id ?? null) as string | null,
+      portions: toNullableNumber(staged.portions),
+      portions_read: Boolean(staged.portions_read),
+      notes: (staged.notes ?? null) as string | null,
+      confidence: toNullableNumber(staged.confidence),
+      status: staged.status as RecipeImportRecipeWithLines['status'],
+      created_at: String(staged.created_at),
+      matched_recipe: (staged.matched_recipe ?? null) as { id: string; name: string } | null,
+      lines: ((staged.lines ?? []) as Record<string, unknown>[]).map((line) => ({
+        id: String(line.id),
+        staged_recipe_id: String(line.staged_recipe_id),
+        raw_label: String(line.raw_label),
+        raw_quantity: (line.raw_quantity ?? null) as string | null,
+        quantity: toNullableNumber(line.quantity),
+        base_unit: (line.base_unit ?? null) as RecipeImportLine['base_unit'],
+        normalized_name: String(line.normalized_name),
+        ingredient_id: (line.ingredient_id ?? null) as string | null,
+        confidence: toNullableNumber(line.confidence),
+        created_at: String(line.created_at),
+      })),
+    }))
+    .sort((a, b) => a.raw_name.localeCompare(b.raw_name, 'fr'))
+
+  return {
+    id: String(row.id),
+    status: row.status as RecipeImportDetail['status'],
+    parse_error: (row.parse_error ?? null) as string | null,
+    parse_model: (row.parse_model ?? null) as string | null,
+    parsed_at: (row.parsed_at ?? null) as string | null,
+    validated_at: (row.validated_at ?? null) as string | null,
+    created_at: String(row.created_at),
+    files,
+    ingredients,
+    recipes,
+  }
 }

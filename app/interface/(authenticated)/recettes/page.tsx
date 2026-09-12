@@ -1,7 +1,7 @@
 import {
   fetchIngredientsWithStock,
   fetchProductOptions,
-  fetchProductsWithoutRecipe,
+  fetchRecipeMissingItems,
   fetchRecipes,
 } from '@/lib/interface/data'
 import { RecipesView } from '@/components/interface/recipes-view'
@@ -11,19 +11,24 @@ export const metadata = {
 }
 
 export default async function RecettesPage() {
-  const [recipes, ingredients, products, productsWithoutRecipe] = await Promise.all([
+  const [recipes, ingredients, products, missingByRecipe] = await Promise.all([
     fetchRecipes(),
     fetchIngredientsWithStock(),
     fetchProductOptions(),
-    fetchProductsWithoutRecipe(),
+    fetchRecipeMissingItems(),
   ])
 
   return (
     <RecipesView
-      recipes={recipes}
+      recipes={recipes.map((recipe) => ({
+        ...recipe,
+        missing: missingByRecipe?.get(recipe.id) ?? [],
+      }))}
       ingredients={ingredients}
       products={products}
-      productsWithoutRecipe={productsWithoutRecipe}
+      // `null` = migration 006 non appliquée : l'écran le dit au lieu de
+      // présenter des recettes faussement complètes.
+      importAvailable={missingByRecipe !== null}
     />
   )
 }

@@ -127,6 +127,8 @@ export interface Recipe {
   name: string
   product_id: string | null
   portions: number
+  /** `false` = rendement non écrit sur la fiche importée : « à préciser ». */
+  portions_confirmed: boolean
   notes: string | null
   is_active: boolean
   created_at: string
@@ -148,6 +150,8 @@ export interface RecipeItemWithIngredient extends RecipeItem {
 export interface RecipeWithItems extends Recipe {
   items: RecipeItemWithIngredient[]
   product: Pick<Product, 'id' | 'name' | 'price'> | null
+  /** Lignes importées dont la quantité n'était pas chiffrable. */
+  missing: RecipeMissingItem[]
 }
 
 // ─── Journée : production, ventes, clôture ──────────────────────────────────
@@ -239,4 +243,99 @@ export interface IngredientPrice {
   pack_price_cents: number
   observed_on: string
   created_at: string
+}
+
+// ─── Import de recettes par fichier ─────────────────────────────────────────
+
+/** Ligne d'une fiche dont la quantité n'était pas chiffrable. */
+export interface RecipeMissingItem {
+  id: string
+  recipe_id: string
+  ingredient_id: string | null
+  raw_label: string
+  /** « une pincée », « QS » : ce que la fiche disait. */
+  raw_quantity: string | null
+  created_at: string
+}
+
+export type RecipeImportStatus =
+  | 'a_lire'
+  | 'lecture'
+  | 'ingredients_a_valider'
+  | 'recettes_a_valider'
+  | 'terminee'
+  | 'echec'
+
+export interface RecipeImport {
+  id: string
+  status: RecipeImportStatus
+  parse_error: string | null
+  parse_model: string | null
+  parsed_at: string | null
+  validated_at: string | null
+  created_at: string
+}
+
+export interface RecipeImportFile {
+  id: string
+  import_id: string
+  file_path: string
+  original_name: string
+  media_type: string
+  status: 'a_lire' | 'lue' | 'echec'
+  parse_error: string | null
+  parsed_at: string | null
+  created_at: string
+}
+
+export interface RecipeImportIngredient {
+  id: string
+  import_id: string
+  raw_name: string
+  normalized_name: string
+  base_unit: IngredientUnit | null
+  ingredient_id: string | null
+  decision: 'creer' | 'rattacher' | 'ignorer'
+  occurrences: number
+  created_at: string
+}
+
+export interface RecipeImportLine {
+  id: string
+  staged_recipe_id: string
+  raw_label: string
+  raw_quantity: string | null
+  quantity: number | null
+  base_unit: IngredientUnit | null
+  normalized_name: string
+  ingredient_id: string | null
+  confidence: number | null
+  created_at: string
+}
+
+export interface RecipeImportRecipe {
+  id: string
+  import_id: string
+  file_id: string | null
+  raw_name: string
+  /** Recette existante portant le même nom. `null` = création. */
+  matched_recipe_id: string | null
+  portions: number | null
+  /** Le rendement était-il écrit sur la fiche ? */
+  portions_read: boolean
+  notes: string | null
+  confidence: number | null
+  status: 'a_valider' | 'validee' | 'ignoree'
+  created_at: string
+}
+
+export interface RecipeImportRecipeWithLines extends RecipeImportRecipe {
+  lines: RecipeImportLine[]
+  matched_recipe: Pick<Recipe, 'id' | 'name'> | null
+}
+
+export interface RecipeImportDetail extends RecipeImport {
+  files: RecipeImportFile[]
+  ingredients: RecipeImportIngredient[]
+  recipes: RecipeImportRecipeWithLines[]
 }
