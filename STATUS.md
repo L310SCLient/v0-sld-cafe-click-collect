@@ -1,14 +1,14 @@
 # STATUS — v0-sld-cafe-click-collect
-Mis à jour : 2026-09-11, 20:31
+Mis à jour : 2026-09-11, 22:17
 
 ## Position
-Branche `feat/interface-ingredients-recettes` · **14 commits d'avance sur `main`, 0 de retard** ·
-**0 commit non poussé** (à jour avec `origin`) · working tree : `pnpm-lock.yaml` régénéré,
-**non commité** (correctif Vercel, voir Build), `STATUS.md` modifié, et `next-env.d.ts` —
-fichier auto-généré par Next au build, à ne pas commiter.
+Branche `feat/interface-ingredients-recettes` · **17 commits d'avance sur `main`, 0 de retard** ·
+**0 commit non poussé** (dernier push : `1dfd044`, le 2026-09-11 à 20:33) · working tree propre
+hormis le correctif du service worker (`public/sw.js`, `lib/pwa/sw.test.ts`) et `STATUS.md`,
+non commités.
 
 **PR #1 ouverte** depuis le 2026-09-10 : « Interface cuisine — socle /interface (code 4 chiffres)
-+ Ingrédients & Recettes ». Elle porte désormais les 14 commits, donc bien plus que son titre.
++ Ingrédients & Recettes ». Elle porte désormais les 17 commits, donc bien plus que son titre.
 
 ## Worktrees
 Aucun worktree secondaire. Un seul arbre : `/Users/liamdarot/Desktop/v0-sld-cafe-click-collect`.
@@ -23,31 +23,34 @@ Branches locales dormantes, non fusionnées, sans suivi distant :
 - `npx vitest run` → **6 fichiers, 73 tests passés**, 878 ms.
 - `npm run build` → `BUILD_EXIT=0`, 16 pages générées, 18 routes.
 
-**Vercel Preview : rouge depuis le premier push de la branche.** Les 5 déploiements Preview
+Rejoué le 2026-09-11 à 22:15, après le correctif du service worker : `tsc` 0, **80 tests** (7 fichiers),
+build 0.
+
+**Vercel Preview : verte depuis `1dfd044` (2026-09-11, 20:33).** Avant le correctif, les 5 déploiements Preview
 (2026-09-10 16:32 → 2026-09-11 12:08) sont en `failure` ; dernier succès : Production `0053ae9`
 (= `main`) le 2026-06-16. Cause reproduite en local, avec `main` comme témoin : la branche a
 ajouté `@anthropic-ai/sdk` et `vitest` à `package.json` et `package-lock.json`, pas à
 `pnpm-lock.yaml` ; or Vercel installe avec pnpm en `--frozen-lockfile` →
 `ERR_PNPM_OUTDATED_LOCKFILE`. Même panne déjà corrigée le 2026-04-09 (`631942c`).
 Journal Vercel lui-même : NON VÉRIFIÉ (inaccessible sans compte Vercel connecté).
-Correctif prêt, **non commité** : `pnpm-lock.yaml` régénéré (+652 / −0, aucune version existante
+Correctif `f777353` : `pnpm-lock.yaml` régénéré (+652 / −0, aucune version existante
 modifiée), installation stricte verte avec pnpm 10.32.1 et 9.15.9 ; build gate rejoué ensuite :
 `tsc` 0, 73 tests, build 0.
+Après push, statut Vercel `pending` à 20:33:09 → `success` à 20:33:24 : 15 s de travail, contre 4 s
+pour l'échec précédent, qui tombait dès l'installation. Contenu du déploiement : **NON VÉRIFIÉ** — la
+Preview est protégée par la connexion Vercel, toutes ses URLs redirigent vers « Log in to Vercel ».
+URL : https://v0-sld-cafe-click-collect-1wi8mscbd-cecerieu31-5424s-projects.vercel.app
 
 Le build confirme par l'absence de route que le lot C n'est pas écrit : on voit
 `/interface`, `/interface/ingredients`, `/interface/recettes`, `/interface/factures`,
 `/interface/factures/[id]`, `/interface/comparatif` — **pas de `/interface/journee`**.
 
 ## En cours
-Correctif du déploiement Vercel : `pnpm-lock.yaml` régénéré et vérifié, en attente de commit et
-de push. Lot D : code complet, clé API posée en local et acceptée par l'API, toujours **NON VÉRIFIÉ**
-sur une vraie facture (migration 005 et bucket manquants). Lot C : à écrire.
+Service worker corrigé, testé et vérifié dans Chrome, non commité. Prochain chantier : import de
+recettes par fichier, à cadrer. Lot D : 005 appliquée mais bucket manquant, **NON VÉRIFIÉ** sur une vraie
+facture. Lot C : schéma 004 appliqué, écrans à écrire.
 
 ## Bloqué
-- **Migrations `004_journee_production_ventes.sql` et `005_factures_fournisseurs.sql` non appliquées.**
-  On attend Liam : le projet Supabase `kvsrrhcewpvxetwensre` n'est pas visible par le compte du CLI,
-  donc l'application passe obligatoirement par l'éditeur SQL du dashboard. Les deux sont
-  strictement additives, rollback en tête de fichier.
 - **Bucket de stockage `invoices` à créer** (Supabase > Storage > New bucket, **privé**). On attend
   Liam. Sans lui l'import de photo échoue avec un message explicite. Privé impérativement : une
   photo de facture expose les prix négociés.
@@ -56,17 +59,18 @@ sur une vraie facture (migration 005 et bucket manquants). Lot C : à écrire.
   (pas de CLI Vercel). Elle doit être cochée pour l'environnement **Preview** : le code des factures
   n'existe que sur la branche. Décision actée : pas d'abonnement Claude Max pour ce parsing (CGU de
   l'Agent SDK).
-- **Déploiements Preview rouges.** Correctif prêt en local ; on attend l'accord de Liam pour le
-  commit et le push, qui déclencheront un nouveau déploiement.
+- **Preview protégée par la connexion Vercel.** Déploiement réussi, mais invisible sans compte
+  Vercel : on attend que Liam l'ouvre, connecté, et y teste la connexion par code. Il faut pour
+  cela `INTERFACE_PIN` défini sur Vercel pour Preview — NON VÉRIFIÉ.
 - **`INTERFACE_PIN` non définie sur Vercel.** On attend la valeur choisie par Liam ; posée à `1234`
   en local, à ne pas laisser telle quelle en production.
 - **Un token GitHub personnel est en clair dans `.git/config`** (URL du remote, préfixe `ghp_`).
   On attend que Liam le révoque et repasse le remote en SSH.
-- **Lot D non vérifiable à l'écran** tant que les trois premiers points ne sont pas faits.
+- **Lot D non vérifiable à l'écran** tant que le bucket `invoices` n'existe pas.
 
 ## Prochaine action
-Commite et pousse `pnpm-lock.yaml` régénéré sur la branche, puis vérifie que le déploiement Preview
-passe au vert — tant qu'il est rouge, ni la clé ni aucun lot ne peut être testé sur Vercel.
+Crée le bucket privé `invoices` dans Supabase (Storage > New bucket) : c'est le dernier prérequis avant
+de tester l'import d'une vraie facture.
 
 ---
 
@@ -88,6 +92,9 @@ sans migration supplémentaire ni reprise d'historique.
   **en pause**, pas supprimé : Supabase retire le DNS d'un projet en pause, d'où le NXDOMAIN qui
   avait fait conclure à tort à une suppression. Réveillé, il répond, et `products` / `orders` /
   `formules` sont intactes.
+- **Migrations 004 et 005** — appliquées par Liam le 2026-09-11. Les 8 tables existent (vérifié par
+  requête REST en service role). Étanchéité RLS **NON VÉRIFIÉE** : les tables sont vides. Effet visible :
+  le Comparatif, qui plantait (`ingredient_prices` introuvable), s'affiche désormais.
 - **Migration 003** — appliquée le 2026-09-11. 19 vérifications passées contre la base réelle
   (contraintes de prix, somme des mouvements, RESTRICT, étanchéité RLS).
 
@@ -121,6 +128,12 @@ sans migration supplémentaire ni reprise d'historique.
   ancienne importée tardivement n'écrase rien.
 - « Moins cher » exige deux fournisseurs ; une hausse exige deux dates différentes.
 
+### Décisions actées — recettes (2026-09-11)
+
+- La création de recettes depuis les produits de la carte sera **retirée** : jugée inutile par Liam.
+- Remplacée par un **import de fichiers de recettes**, tous formats (Excel, CSV, PDF, photos, Word), lu
+  directement par Claude via la clé API, dans l'app, sans file d'attente. À cadrer avant d'écrire.
+
 ## Dette repérée, non traitée
 
 - Les server actions de `/admin` (`app/actions/products.ts`, `daily-specials.ts`, `formules.ts`,
@@ -133,11 +146,18 @@ sans migration supplémentaire ni reprise d'historique.
   rendait zéro produit sans le moindre message.
 - Numérotation des migrations en doublon : deux `001_` (`001_formules.sql`, `001_init.sql`) et
   deux `002_` (`002_daily_specials_custom.sql`, `002_product_images.sql`).
-- `public/sw.js:68` : hors ligne, une page absente du cache est remplacée **en silence** par l'accueil
-  `/`, URL inchangée. Constaté le 2026-09-11 : `/interface/comparatif` affichait l'accueil, serveur de
-  dev arrêté. Le même service worker met en cache les pages authentifiées — `/interface/ingredients`
-  et `/interface/recettes` trouvées dans `sld-cafe-v1` : prix et coûts restent sur l'appareil après
-  déconnexion.
+- ~~Service worker qui remplace une page absente par l'accueil et stocke les pages authentifiées~~
+  **Corrigé le 2026-09-11, non commité.** Cause des deux bugs vus par Liam sur `localhost` : Comparatif
+  affichant l'accueil, et pavé de code aux boutons morts (copie de `/interface` resservie serveur
+  éteint). `/interface` et `/admin` ne sont plus ni stockées ni resservies ; hors ligne, page
+  « Pas de connexion » (503) ; cache passé en `sld-cafe-v2`, ce qui efface l'ancien sur les appareils.
+  7 tests dans `lib/pwa/sw.test.ts`. Vérifié dans Chrome : ancien cache effacé, 0 page privée stockée,
+  Comparatif et pavé hors ligne → « Pas de connexion », accueil public toujours disponible hors ligne.
+- Serveur de dev ouvert depuis une autre adresse que `localhost` (`127.0.0.1`, IP réseau d'un
+  téléphone) : Next 16 bloque ses ressources de dev, la page s'affiche mais aucun bouton ne répond.
+  Pour tester sur téléphone : `allowedDevOrigins` dans `next.config.mjs`, ou la Preview.
+- `next-env.d.ts` est réécrit différemment par `next dev` et par `next build` : il apparaît modifié
+  en permanence.
 - `sldcafe.fr` ne se résout pas (aucun enregistrement DNS, pas de NS) ; seule
   `v0-sld-cafe-click-collect.vercel.app` répond.
 - `next.config.mjs` : `typescript.ignoreBuildErrors: true` — un build vert ne prouve rien côté types,
