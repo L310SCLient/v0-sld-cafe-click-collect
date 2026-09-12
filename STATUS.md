@@ -1,104 +1,79 @@
 # STATUS — v0-sld-cafe-click-collect
-Mis à jour : 2026-09-12, 22:56
+Mis à jour : 2026-09-13, 00:47
 
 ## Position
-Branche `feat/interface-ingredients-recettes` · **17 commits d'avance sur `main`, 0 de retard** ·
-**0 commit non poussé** (dernier push : `1dfd044`, le 2026-09-11 à 20:33) · working tree propre
-hormis le correctif du service worker (`public/sw.js`, `lib/pwa/sw.test.ts`) et `STATUS.md`,
-non commités.
+Branche `main`, à jour avec `origin/main` (`d7d3897`), working tree propre.
 
-**PR #1 ouverte** depuis le 2026-09-10 : « Interface cuisine — socle /interface (code 4 chiffres)
-+ Ingrédients & Recettes ». Elle porte désormais les 17 commits, donc bien plus que son titre.
+- **PR #1** — interface cuisine, lots A à E — fusionnée le 2026-09-12 à 20:59 UTC (`30c2962`).
+- **PR #2** — icône « Cuisine » sur iPhone — fusionnée le 2026-09-12 à 22:45 UTC (`d7d3897`).
+
+Branches dormantes : `feat-formules`, `redesign`, `v0/cecerieu31-5424-0fa09333`, plus les deux
+branches fusionnées.
 
 ## Worktrees
-Aucun worktree secondaire. Un seul arbre : `/Users/liamdarot/Desktop/v0-sld-cafe-click-collect`.
-
-Branches locales dormantes, non fusionnées, sans suivi distant :
-`feat-formules` (0d0d944), `redesign` (e121cdf). `v0/cecerieu31-5424-0fa09333` suit l'origine.
+Aucun worktree secondaire.
 
 ## Build
-**Vert**, établi le 2026-09-11 à 18:03-18:05, aucun `next dev` en cours pendant les commandes :
+**Vert**, rejoué avant la PR #2, sans `next dev` actif : `tsc --noEmit` 0 · **100 tests** (8 fichiers)
+· `npm run build` 0.
 
-- `npx tsc --noEmit` → `TSC_EXIT=0`, aucune sortie.
-- `npx vitest run` → **6 fichiers, 73 tests passés**, 878 ms.
-- `npm run build` → `BUILD_EXIT=0`, 16 pages générées, 18 routes.
+**Production Vercel : `d7d3897` en `success`** (2026-09-13, 00:45). Vérifié sur le site lui-même :
 
-Rejoué le 2026-09-11 à 22:15, après le correctif du service worker : `tsc` 0, **80 tests** (7 fichiers),
-build 0.
-
-**Vercel Preview : verte depuis `1dfd044` (2026-09-11, 20:33).** Avant le correctif, les 5 déploiements Preview
-(2026-09-10 16:32 → 2026-09-11 12:08) sont en `failure` ; dernier succès : Production `0053ae9`
-(= `main`) le 2026-06-16. Cause reproduite en local, avec `main` comme témoin : la branche a
-ajouté `@anthropic-ai/sdk` et `vitest` à `package.json` et `package-lock.json`, pas à
-`pnpm-lock.yaml` ; or Vercel installe avec pnpm en `--frozen-lockfile` →
-`ERR_PNPM_OUTDATED_LOCKFILE`. Même panne déjà corrigée le 2026-04-09 (`631942c`).
-Journal Vercel lui-même : NON VÉRIFIÉ (inaccessible sans compte Vercel connecté).
-Correctif `f777353` : `pnpm-lock.yaml` régénéré (+652 / −0, aucune version existante
-modifiée), installation stricte verte avec pnpm 10.32.1 et 9.15.9 ; build gate rejoué ensuite :
-`tsc` 0, 73 tests, build 0.
-Après push, statut Vercel `pending` à 20:33:09 → `success` à 20:33:24 : 15 s de travail, contre 4 s
-pour l'échec précédent, qui tombait dès l'installation. Contenu du déploiement : **NON VÉRIFIÉ** — la
-Preview est protégée par la connexion Vercel, toutes ses URLs redirigent vers « Log in to Vercel ».
-URL : https://v0-sld-cafe-click-collect-1wi8mscbd-cecerieu31-5424s-projects.vercel.app
-
-Le build confirme par l'absence de route que le lot C n'est pas écrit : on voit
-`/interface`, `/interface/ingredients`, `/interface/recettes`, `/interface/factures`,
-`/interface/factures/[id]`, `/interface/comparatif` — **pas de `/interface/journee`**.
+- `/interface` déclare `/cuisine.webmanifest`, titre « Cuisine », `apple-touch-icon` en PNG ;
+- `/cuisine.webmanifest` répond 200 avec `start_url: /interface` ;
+- `/` garde `/manifest.json` et « SLD Café » : la boutique n'a pas bougé ;
+- le service worker `sld-cafe-v2` est en ligne ;
+- un visiteur anonyme sur `/interface/recettes` reçoit `NEXT_REDIRECT;/interface;307` et **aucune
+  donnée** : la garde tient.
 
 ## En cours
-Lot E écrit : import de recettes par fichier (migration 006, lecteur Claude, deux écrans de
-validation) et retrait de la création depuis le catalogue. **NON VÉRIFIÉ contre la base** : la 006
-n'est pas appliquée. Lot D : prêt, jamais essayé sur une vraie facture. Lot C : à écrire.
+Rien d'ouvert : tout est fusionné et déployé. Prochaine brique à écrire : **lot C**, la journée
+(production, ventes, clôture, pertes).
 
 ## Bloqué
-- **Migration `006_import_recettes.sql` non appliquée.** On attend Liam, dans l'éditeur SQL du
-  dashboard : aucune API ne permet de créer des tables. Sans elle, le bouton « Importer des fiches »
-  échoue et l'écran Recettes affiche un bandeau « import hors service » — les recettes restent
-  justes. Strictement additive, rollback en tête de fichier.
-- **`ANTHROPIC_API_KEY`** — posée dans `.env.local` le 2026-09-11 et **acceptée par l'API**
-  (`models.list` : 11 modèles, `claude-opus-5` inclus, aucun token consommé). Sur Vercel : NON VÉRIFIÉ
-  (pas de CLI Vercel). Elle doit être cochée pour l'environnement **Preview** : le code des factures
-  n'existe que sur la branche. Décision actée : pas d'abonnement Claude Max pour ce parsing (CGU de
-  l'Agent SDK).
-- **Preview protégée par la connexion Vercel.** Déploiement réussi, mais invisible sans compte
-  Vercel : on attend que Liam l'ouvre, connecté, et y teste la connexion par code. Il faut pour
-  cela `INTERFACE_PIN` défini sur Vercel pour Preview — NON VÉRIFIÉ.
-- **`INTERFACE_PIN` non définie sur Vercel.** On attend la valeur choisie par Liam ; posée à `1234`
-  en local, à ne pas laisser telle quelle en production.
-- **Un token GitHub personnel est en clair dans `.git/config`** (URL du remote, préfixe `ghp_`).
-  On attend que Liam le révoque et repasse le remote en SSH.
-- **Lots D et E non vérifiés à l'écran** : il manque une vraie facture pour D, et la migration 006 pour E.
+- **Aucune facture réelle n'a traversé la chaîne.** Les lots D et E restent **NON VÉRIFIÉS** de bout
+  en bout. On attend que Liam photographie une facture depuis `/interface` sur son iPhone.
+- **Lot E sans matière** : Liam n'a pas de fiches recettes à importer pour l'instant.
+- **Étanchéité RLS des tables 004, 005 et 006 NON VÉRIFIÉE** : elles sont vides, donc une fuite
+  éventuelle ne peut pas être mise en évidence. À refaire dès qu'une facture y aura écrit.
+- **Un token GitHub personnel est en clair dans `.git/config`** (préfixe `ghp_`). À révoquer, et
+  repasser le remote en SSH.
+- **`gh` repasse seul sur le compte `lacompagnietextile`**, qui n'a qu'un droit de lecture : toute
+  commande d'écriture doit épingler le jeton de `L310SCLient`
+  (`GH_TOKEN=$(gh auth token --user L310SCLient) gh ...`).
+- **`sldcafe.fr` ne se résout pas** (aucun DNS) : seule `v0-sld-cafe-click-collect.vercel.app` répond.
 
 ## Prochaine action
-Applique `006_import_recettes.sql` dans l'éditeur SQL Supabase, puis importe une vraie fiche recette
-et une vraie facture : c'est la seule façon de vérifier les lots D et E contre la base.
+Photographie une facture depuis `/interface` sur l'iPhone et valide-la : c'est la seule vérification
+qui manque aux lots D et E.
 
 ---
 
-## Interface cuisine — 4 briques
+## Interface cuisine — 5 briques
 
 | Brique | État |
 |---|---|
-| **A** Socle `/interface` + code 4 chiffres | **Livré et vérifié à l'écran** — connexion au code, session ouverte |
-| **B** Ingrédients + Recettes avec coûts | **Livré et vérifié à l'écran** — création d'ingrédient, prix au kg, réception de stock. Recettes créées depuis les produits du site. Alerte de stock bas avec seuil. |
-| **C** Journée : production, ventes, clôture, pertes, moyennes | Schéma (004) écrit. Écrans et actions **à faire** |
-| **D** Factures photographiées et parsées, comparatifs fournisseurs | Code livré, 005 appliquée, bucket `invoices` créé et privé, clé API valide. **NON VÉRIFIÉ** : aucune facture réelle passée |
-| **E** Import de recettes par fichier | Code livré, `tsc` + 100 tests + build verts. **NON VÉRIFIÉ** : migration 006 non appliquée |
-
-Le journal de mouvements et la provenance des prix sont déjà en place pour que C et D se branchent
-sans migration supplémentaire ni reprise d'historique.
+| **A** Socle `/interface` + code 4 chiffres | **Livré, en production** — connexion au code, session signée |
+| **B** Ingrédients + Recettes avec coûts | **Livré, en production** — prix au kg, réception de stock, alerte de seuil |
+| **C** Journée : production, ventes, clôture, pertes | Schéma `004` appliqué. Écrans et actions **à écrire** |
+| **D** Factures photographiées, comparatifs fournisseurs | Livré et déployé ; `005` appliquée, bucket privé prouvé, clé API valide. **NON VÉRIFIÉ** : aucune facture réelle |
+| **E** Import de recettes par fichier | Livré et déployé ; `006` appliquée. **NON VÉRIFIÉ** : aucune fiche à importer pour l'instant |
 
 ### Historique des bloquants résolus
 
-- **Projet Supabase injoignable** — résolu le 2026-09-11. Le projet `kvsrrhcewpvxetwensre` était
-  **en pause**, pas supprimé : Supabase retire le DNS d'un projet en pause, d'où le NXDOMAIN qui
-  avait fait conclure à tort à une suppression. Réveillé, il répond, et `products` / `orders` /
-  `formules` sont intactes.
-- **Migrations 004 et 005** — appliquées par Liam le 2026-09-11. Les 8 tables existent (vérifié par
-  requête REST en service role). Étanchéité RLS **NON VÉRIFIÉE** : les tables sont vides. Effet visible :
-  le Comparatif, qui plantait (`ingredient_prices` introuvable), s'affiche désormais.
-- **Migration 003** — appliquée le 2026-09-11. 19 vérifications passées contre la base réelle
-  (contraintes de prix, somme des mouvements, RESTRICT, étanchéité RLS).
+- **Migration `006`** — appliquée par Liam le 2026-09-12. Les 6 tables existent et
+  `recipes.portions_confirmed` est en place (vérifié par requête REST en service role).
+- **Buckets de stockage** — `invoices` et `recipe-files` créés et **vérifiés privés** le 2026-09-12.
+  Envoi, relecture en service role et refus d'accès anonyme testés de bout en bout sur `invoices`.
+- **Déploiements Preview en échec** — 5 échecs consécutifs depuis le premier push de la branche :
+  `pnpm-lock.yaml` n'avait pas suivi l'ajout de `@anthropic-ai/sdk` et `vitest`, or Vercel installe
+  avec pnpm en `--frozen-lockfile`. Reproduit en local avec `main` comme témoin, corrigé par
+  `f777353`. Même panne déjà vue le 2026-04-09.
+- **Projet Supabase injoignable** — résolu le 2026-09-11 : le projet était **en pause**, pas
+  supprimé ; Supabase retire le DNS d'un projet en pause, d'où le NXDOMAIN trompeur.
+- **Migrations 004 et 005** — appliquées le 2026-09-11, 8 tables vérifiées. Effet visible : le
+  Comparatif, qui plantait faute de `ingredient_prices`, s'affiche.
+- **Migration 003** — appliquée le 2026-09-11, 19 vérifications passées contre la base réelle.
 
 ### Décisions actées — socle
 
@@ -158,7 +133,7 @@ sans migration supplémentaire ni reprise d'historique.
 - Numérotation des migrations en doublon : deux `001_` (`001_formules.sql`, `001_init.sql`) et
   deux `002_` (`002_daily_specials_custom.sql`, `002_product_images.sql`).
 - ~~Service worker qui remplace une page absente par l'accueil et stocke les pages authentifiées~~
-  **Corrigé le 2026-09-11, non commité.** Cause des deux bugs vus par Liam sur `localhost` : Comparatif
+  **Corrigé, fusionné et en production (`ffb1f4b`).** Cause des deux bugs vus par Liam sur `localhost` : Comparatif
   affichant l'accueil, et pavé de code aux boutons morts (copie de `/interface` resservie serveur
   éteint). `/interface` et `/admin` ne sont plus ni stockées ni resservies ; hors ligne, page
   « Pas de connexion » (503) ; cache passé en `sld-cafe-v2`, ce qui efface l'ancien sur les appareils.
@@ -175,5 +150,5 @@ sans migration supplémentaire ni reprise d'historique.
   seul `tsc --noEmit` fait foi.
 - Deux verrous de dépendances (`package-lock.json` et `pnpm-lock.yaml`) : c'est ce qui laisse le verrou
   pnpm dériver sans que personne ne le voie. Vercel n'utilise que le second.
-- Le correctif de l'icône iPhone (`1767e7a`) n'est pas sur `main` : en prod, `apple-touch-icon` pointe
-  encore vers un SVG qu'iOS ignore.
+- ~~Icône iPhone en SVG~~ **Corrigé et en production** : `apple-touch-icon` pointe sur un PNG 180×180,
+  et `/interface` a son propre manifeste (`f629eb2`).
