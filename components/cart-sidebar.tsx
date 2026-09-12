@@ -26,7 +26,7 @@ export function CartSidebar() {
   const [checkoutOpen, setCheckoutOpen] = useState(false)
   const isMobile = useIsMobile()
 
-  if (pathname.startsWith("/admin")) return null
+  if (pathname.startsWith("/admin") || pathname.startsWith("/interface")) return null
 
   const handleCommander = () => {
     setCheckoutOpen(true)
