@@ -18,6 +18,49 @@ import { importInvoicePhoto, parseInvoice } from '@/app/actions/invoices'
  * d'abord, et la lecture est tentée ensuite. Si le parsing est indisponible,
  * la facture existe quand même et ses lignes peuvent être saisies à la main.
  */
+/** Côté long maximal envoyé à l'API : au-delà, elle redimensionne elle-même. */
+const MAX_COTE = 1600
+
+/**
+ * Réduit la photo dans le navigateur avant l'envoi.
+ *
+ * Deux problèmes réglés d'un coup : un iPhone récent produit des JPEG de 3 à
+ * 5 Mo, au bord de la limite de l'API, et la pellicule peut rendre du HEIC,
+ * que l'API ne lit pas — le canvas le décode et ressort du JPEG. Si le
+ * navigateur ne sait pas décoder le fichier, on renvoie l'original et le
+ * serveur dira franchement pourquoi il le refuse.
+ */
+async function reduireImage(file: File): Promise<File> {
+  const dejaLisible = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)
+
+  let bitmap: ImageBitmap
+  try {
+    bitmap = await createImageBitmap(file)
+  } catch {
+    return file
+  }
+
+  const ratio = Math.min(1, MAX_COTE / Math.max(bitmap.width, bitmap.height))
+  const canvas = document.createElement('canvas')
+  canvas.width = Math.round(bitmap.width * ratio)
+  canvas.height = Math.round(bitmap.height * ratio)
+
+  const context = canvas.getContext('2d')
+  if (!context) return file
+  context.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+  bitmap.close()
+
+  const blob = await new Promise<Blob | null>((resolve) =>
+    canvas.toBlob(resolve, 'image/jpeg', 0.85)
+  )
+  if (!blob) return file
+
+  // On ne remplace un fichier déjà lisible que si on l'allège vraiment.
+  if (dejaLisible && blob.size >= file.size) return file
+
+  return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' })
+}
+
 export function InvoiceImport() {
   const router = useRouter()
   const cameraInput = useRef<HTMLInputElement>(null)
@@ -32,9 +75,12 @@ export function InvoiceImport() {
     if (!file) return
 
     startTransition(async () => {
+      setStep('Préparation de la photo…')
+      const prete = await reduireImage(file)
+
       setStep('Envoi de la photo…')
       const formData = new FormData()
-      formData.append('photo', file)
+      formData.append('photo', prete)
 
       const imported = await importInvoicePhoto(formData)
       if (imported.error || !imported.invoiceId) {
