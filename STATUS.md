@@ -1,11 +1,16 @@
 # STATUS — v0-sld-cafe-click-collect
-Mis à jour : 2026-09-13, 00:47
+Mis à jour : 2026-09-13, 18:46
 
 ## Position
-Branche `main`, à jour avec `origin/main` (`d7d3897`), working tree propre.
+Branche `main`, à jour avec `origin/main` (`afe5c10`), working tree propre.
 
-- **PR #1** — interface cuisine, lots A à E — fusionnée le 2026-09-12 à 20:59 UTC (`30c2962`).
-- **PR #2** — icône « Cuisine » sur iPhone — fusionnée le 2026-09-12 à 22:45 UTC (`d7d3897`).
+- **PR #1** — interface cuisine, lots A à E — fusionnée le 2026-09-12 (`30c2962`).
+- **PR #2** — icône « Cuisine » sur iPhone — fusionnée le 2026-09-12 (`d7d3897`).
+- **PR #3** — squelette d'attente, cibles à 44 px, import depuis le Comparatif (`aafa316`).
+- **PR #4** — préchargement des onglets, écran de facture au doigt (`ae5d608`).
+- **PR #5** — photo de facture réduite avant l'envoi (`afe5c10`).
+
+Les cinq sont fusionnées et **déployées en production**, chacune vérifiée `success` côté Vercel.
 
 Branches dormantes : `feat-formules`, `redesign`, `v0/cecerieu31-5424-0fa09333`, plus les deux
 branches fusionnées.
@@ -17,7 +22,7 @@ Aucun worktree secondaire.
 **Vert**, rejoué avant la PR #2, sans `next dev` actif : `tsc --noEmit` 0 · **100 tests** (8 fichiers)
 · `npm run build` 0.
 
-**Production Vercel : `d7d3897` en `success`** (2026-09-13, 00:45). Vérifié sur le site lui-même :
+**Production Vercel : `afe5c10` en `success`** (2026-09-13, 18:45). Vérifié sur le site lui-même :
 
 - `/interface` déclare `/cuisine.webmanifest`, titre « Cuisine », `apple-touch-icon` en PNG ;
 - `/cuisine.webmanifest` répond 200 avec `start_url: /interface` ;
@@ -27,10 +32,22 @@ Aucun worktree secondaire.
   donnée** : la garde tient.
 
 ## En cours
-Rien d'ouvert : tout est fusionné et déployé. Prochaine brique à écrire : **lot C**, la journée
-(production, ventes, clôture, pertes).
+Rien d'ouvert. Journée consacrée aux reproches de Liam sur la PWA : lenteur ressentie, confort
+mobile, import impossible depuis le Comparatif. Cinq correctifs livrés et déployés — squelette
+d'attente, préchargement des onglets, cibles tactiles à 44 px, grilles de l'écran de facture en une
+à deux colonnes sur téléphone, photo réduite à 1600 px avant envoi (ce qui convertit aussi le HEIC).
+Prochaine brique à écrire : **lot C**, la journée.
 
 ## Bloqué
+- **Aucun écran authentifié n'a été vu en largeur mobile.** Les correctifs d'aujourd'hui sont
+  raisonnés depuis le code, mesurés et compilés, mais **jamais constatés à l'écran** : la session
+  locale a expiré (entrer le code n'est pas mon rôle) et le redimensionnement de fenêtre de Chrome
+  reste sans effet sur la zone de rendu. On attend une capture depuis l'iPhone de Liam, ou qu'il
+  rouvre une session sur `localhost`.
+- **La latence de 200 ms n'est pas supprimée, seulement masquée.** Aller-retour serveur mesuré entre
+  127 et 385 ms en production, dont 99 à 165 ms de requêtes Supabase. Leviers restants : alléger
+  l'écran Recettes, qui expédie les 97 recettes avec tous leurs ingrédients d'un bloc, et donner un
+  retour visuel immédiat sur les boutons d'enregistrement.
 - **Aucune facture réelle n'a traversé la chaîne.** Les lots D et E restent **NON VÉRIFIÉS** de bout
   en bout. On attend que Liam photographie une facture depuis `/interface` sur son iPhone.
 - **Lot E sans matière** : Liam n'a pas de fiches recettes à importer pour l'instant.
@@ -44,8 +61,8 @@ Rien d'ouvert : tout est fusionné et déployé. Prochaine brique à écrire : *
 - **`sldcafe.fr` ne se résout pas** (aucun DNS) : seule `v0-sld-cafe-click-collect.vercel.app` répond.
 
 ## Prochaine action
-Photographie une facture depuis `/interface` sur l'iPhone et valide-la : c'est la seule vérification
-qui manque aux lots D et E.
+Photographie une facture depuis l'onglet Factures sur l'iPhone et valide-la : tout est en ligne, et
+c'est la seule vérification qui manque aux lots D et E.
 
 ---
 
