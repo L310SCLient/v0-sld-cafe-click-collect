@@ -159,7 +159,7 @@ export function InvoiceValidation({
         className="rounded-2xl p-3 sm:p-4 mb-4 space-y-3"
         style={{ backgroundColor: 'var(--creme-surface)', border: '1px solid var(--espresso-20)' }}
       >
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div>
             <FieldLabel htmlFor="invoice-supplier">Fournisseur</FieldLabel>
             <select
@@ -375,14 +375,14 @@ function InvoiceLineRow({
 
       {!readOnly && (
         <>
-          <div className="grid grid-cols-3 gap-2 mt-3">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3">
             <div>
               <FieldLabel htmlFor={`qty-${line.id}`}>Conditionnement</FieldLabel>
               <input
                 id={`qty-${line.id}`}
                 value={packQuantity}
                 onChange={(event) => setPackQuantity(event.target.value)}
-                style={{ ...inputStyle, fontSize: '14px', minHeight: '42px' }}
+                style={{ ...inputStyle, fontSize: '14px', minHeight: '44px' }}
                 inputMode="decimal"
               />
             </div>
@@ -392,7 +392,7 @@ function InvoiceLineRow({
                 id={`unit-${line.id}`}
                 value={unit}
                 onChange={(event) => setUnit(event.target.value as IngredientUnit | '')}
-                style={{ ...inputStyle, fontSize: '14px', minHeight: '42px' }}
+                style={{ ...inputStyle, fontSize: '14px', minHeight: '44px' }}
               >
                 <option value="">—</option>
                 <option value="g">g</option>
@@ -406,7 +406,7 @@ function InvoiceLineRow({
                 id={`price-${line.id}`}
                 value={price}
                 onChange={(event) => setPrice(event.target.value)}
-                style={{ ...inputStyle, fontSize: '14px', minHeight: '42px' }}
+                style={{ ...inputStyle, fontSize: '14px', minHeight: '44px' }}
                 inputMode="decimal"
               />
             </div>
@@ -419,7 +419,7 @@ function InvoiceLineRow({
                 id={`ing-${line.id}`}
                 value={ingredientId}
                 onChange={(event) => setIngredientId(event.target.value)}
-                style={{ ...inputStyle, fontSize: '14px', minHeight: '42px' }}
+                style={{ ...inputStyle, fontSize: '14px', minHeight: '44px' }}
               >
                 <option value="">Non rattachée — aucun prix produit</option>
                 {ingredients.map((ingredient) => (
@@ -434,8 +434,8 @@ function InvoiceLineRow({
                 aria-label="Créer un ingrédient depuis cette ligne"
                 className="shrink-0 flex items-center justify-center rounded-full active:opacity-70"
                 style={{
-                  width: '42px',
-                  height: '42px',
+                  width: '44px',
+                  height: '44px',
                   border: '1px solid var(--espresso-20)',
                   color: 'var(--espresso-80)',
                 }}
@@ -535,14 +535,14 @@ function CreateIngredientFromLine({
         Nouvel ingrédient, créé depuis cette ligne. Son prix viendra de la validation de la
         facture, avec sa provenance et sa date.
       </p>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         <div className="col-span-2">
           <FieldLabel htmlFor={`new-name-${lineId}`}>Nom</FieldLabel>
           <input
             id={`new-name-${lineId}`}
             value={name}
             onChange={(event) => setName(event.target.value)}
-            style={{ ...inputStyle, fontSize: '14px', minHeight: '42px' }}
+            style={{ ...inputStyle, fontSize: '14px', minHeight: '44px' }}
           />
         </div>
         <div>
@@ -551,7 +551,7 @@ function CreateIngredientFromLine({
             id={`new-unit-${lineId}`}
             value={unit}
             onChange={(event) => setUnit(event.target.value as IngredientUnit)}
-            style={{ ...inputStyle, fontSize: '14px', minHeight: '42px' }}
+            style={{ ...inputStyle, fontSize: '14px', minHeight: '44px' }}
           >
             <option value="g">g</option>
             <option value="ml">ml</option>
