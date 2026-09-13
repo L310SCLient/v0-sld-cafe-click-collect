@@ -24,6 +24,12 @@ export function InterfaceNav() {
       style={{
         backgroundColor: 'var(--creme-surface)',
         borderBottom: '1px solid var(--espresso-20)',
+        // Installée sur l'écran d'accueil, l'app occupe tout l'écran, barre
+        // d'état comprise : sans cette marge, l'heure et le réseau écrasent
+        // les onglets.
+        paddingTop: 'env(safe-area-inset-top)',
+        paddingLeft: 'env(safe-area-inset-left)',
+        paddingRight: 'env(safe-area-inset-right)',
       }}
     >
       <div className="flex items-center gap-1 px-2 sm:px-5" style={{ minHeight: '56px' }}>
@@ -41,12 +47,13 @@ export function InterfaceNav() {
               <Link
                 key={item.href}
                 href={item.href}
+                aria-label={item.label}
                 // Le squelette d'attente rend le préchargement utile : Next
                 // récupère l'onglet avant le toucher, au lieu d'attendre le
                 // clic pour commencer.
                 prefetch
                 className={cn(
-                  'flex items-center gap-2 rounded-full px-4 transition-colors shrink-0 whitespace-nowrap',
+                  'flex items-center justify-center gap-2 rounded-full px-3 sm:px-4 transition-colors shrink-0 whitespace-nowrap',
                   !isActive && 'active:opacity-70'
                 )}
                 style={{
@@ -58,7 +65,7 @@ export function InterfaceNav() {
                 }}
               >
                 <item.icon className="h-4 w-4 shrink-0" strokeWidth={1.8} />
-                {item.label}
+                <span className={cn(isActive ? 'inline' : 'hidden sm:inline')}>{item.label}</span>
               </Link>
             )
           })}
