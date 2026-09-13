@@ -182,7 +182,7 @@ function IngredientStep({
                 </p>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <select
                   value={entry.base_unit ?? ''}
                   disabled={isPending || entry.decision !== 'creer'}
@@ -194,7 +194,7 @@ function IngredientStep({
                       decision: entry.decision,
                     })
                   }
-                  style={{ ...inputStyle, width: '110px', minHeight: '38px' }}
+                  style={{ ...inputStyle, width: '100%', maxWidth: '120px', minHeight: '44px' }}
                 >
                   <option value="">Unité…</option>
                   {UNIT_OPTIONS.map((option) => (
@@ -216,7 +216,7 @@ function IngredientStep({
                       decision: value === 'creer' || value === 'ignorer' ? value : 'rattacher',
                     })
                   }}
-                  style={{ ...inputStyle, width: '190px', minHeight: '38px' }}
+                  style={{ ...inputStyle, width: '100%', maxWidth: '220px', minHeight: '44px' }}
                 >
                   <option value="creer">Créer cet ingrédient</option>
                   <option value="ignorer">Ignorer</option>
@@ -349,7 +349,7 @@ function RecipeStep({
                 </div>
 
                 {!dejaTraitee && (
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <input
                       inputMode="numeric"
                       placeholder="portions"
@@ -368,7 +368,7 @@ function RecipeStep({
                         })
                       }}
                       disabled={isPending}
-                      style={{ ...inputStyle, width: '96px', minHeight: '38px' }}
+                      style={{ ...inputStyle, width: '100%', maxWidth: '110px', minHeight: '44px' }}
                     />
                     <GhostButton onClick={() => onIgnore(staged.id)} disabled={isPending}>
                       Ignorer
@@ -379,7 +379,7 @@ function RecipeStep({
                       disabled={isPending}
                       className="rounded-full px-4 disabled:opacity-50"
                       style={{
-                        minHeight: '38px',
+                        minHeight: '44px',
                         backgroundColor: 'var(--terracotta)',
                         color: '#ffffff',
                         fontSize: '13px',

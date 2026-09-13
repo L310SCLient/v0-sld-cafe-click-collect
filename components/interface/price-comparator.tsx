@@ -1,7 +1,8 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { ArrowDown, ArrowUp, Minus } from 'lucide-react'
+import Link from 'next/link'
+import { ArrowDown, ArrowUp, FileText, Minus } from 'lucide-react'
 import {
   type PriceObservation,
   compareSuppliers,
@@ -98,6 +99,23 @@ export function PriceComparator({
             facture : chaque ligne rattachée à un ingrédient produit un prix daté, et la
             comparaison devient possible dès qu’un même ingrédient vient de deux fournisseurs.
           </p>
+
+          {/* L'écran demandait d'importer une facture sans donner le moyen de
+              le faire : le bouton manquait là où naît le besoin. */}
+          <Link
+            href="/interface/factures"
+            className="inline-flex items-center gap-1.5 rounded-full px-5 mt-5 active:scale-[0.98] transition-transform"
+            style={{
+              minHeight: '48px',
+              backgroundColor: 'var(--terracotta)',
+              color: '#ffffff',
+              fontSize: '15px',
+              fontWeight: 600,
+            }}
+          >
+            <FileText className="h-4 w-4" strokeWidth={1.9} />
+            Importer une facture
+          </Link>
         </div>
       </div>
     )

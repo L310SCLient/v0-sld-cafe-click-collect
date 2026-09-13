@@ -26,7 +26,7 @@ export function InterfaceNav() {
         borderBottom: '1px solid var(--espresso-20)',
       }}
     >
-      <div className="flex items-center gap-1 px-3 sm:px-5" style={{ minHeight: '56px' }}>
+      <div className="flex items-center gap-1 px-2 sm:px-5" style={{ minHeight: '56px' }}>
         <span
           className="font-serif mr-2 hidden sm:block"
           style={{ fontSize: '17px', color: 'var(--espresso)' }}
@@ -46,7 +46,7 @@ export function InterfaceNav() {
                   !isActive && 'active:opacity-70'
                 )}
                 style={{
-                  minHeight: '40px',
+                  minHeight: '44px',
                   backgroundColor: isActive ? 'var(--terracotta)' : 'transparent',
                   color: isActive ? '#ffffff' : 'var(--espresso-80)',
                   fontSize: '14px',
@@ -66,7 +66,7 @@ export function InterfaceNav() {
           disabled={isPending}
           aria-label="Fermer la session"
           className="flex items-center justify-center rounded-full active:opacity-70 disabled:opacity-40"
-          style={{ width: '40px', height: '40px', color: 'var(--espresso-60)' }}
+          style={{ width: '44px', height: '44px', color: 'var(--espresso-60)' }}
         >
           <LogOut className="h-4 w-4" strokeWidth={1.8} />
         </button>
