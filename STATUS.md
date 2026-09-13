@@ -1,16 +1,17 @@
 # STATUS — v0-sld-cafe-click-collect
-Mis à jour : 2026-09-13, 18:46
+Mis à jour : 2026-09-13, 18:57
 
 ## Position
-Branche `main`, à jour avec `origin/main` (`afe5c10`), working tree propre.
+Branche `main`, à jour avec `origin/main` (`ea0dcb4`), working tree propre.
 
 - **PR #1** — interface cuisine, lots A à E — fusionnée le 2026-09-12 (`30c2962`).
 - **PR #2** — icône « Cuisine » sur iPhone — fusionnée le 2026-09-12 (`d7d3897`).
 - **PR #3** — squelette d'attente, cibles à 44 px, import depuis le Comparatif (`aafa316`).
 - **PR #4** — préchargement des onglets, écran de facture au doigt (`ae5d608`).
 - **PR #5** — photo de facture réduite avant l'envoi (`afe5c10`).
+- **PR #6** — onglets sortis de sous la barre d'état de l'iPhone (`ea0dcb4`).
 
-Les cinq sont fusionnées et **déployées en production**, chacune vérifiée `success` côté Vercel.
+Les six sont fusionnées et **déployées en production**, chacune vérifiée `success` côté Vercel.
 
 Branches dormantes : `feat-formules`, `redesign`, `v0/cecerieu31-5424-0fa09333`, plus les deux
 branches fusionnées.
@@ -22,7 +23,7 @@ Aucun worktree secondaire.
 **Vert**, rejoué avant la PR #2, sans `next dev` actif : `tsc --noEmit` 0 · **100 tests** (8 fichiers)
 · `npm run build` 0.
 
-**Production Vercel : `afe5c10` en `success`** (2026-09-13, 18:45). Vérifié sur le site lui-même :
+**Production Vercel : `ea0dcb4` en `success`** (2026-09-13, 18:56). Vérifié sur le site lui-même :
 
 - `/interface` déclare `/cuisine.webmanifest`, titre « Cuisine », `apple-touch-icon` en PNG ;
 - `/cuisine.webmanifest` répond 200 avec `start_url: /interface` ;
@@ -33,17 +34,20 @@ Aucun worktree secondaire.
 
 ## En cours
 Rien d'ouvert. Journée consacrée aux reproches de Liam sur la PWA : lenteur ressentie, confort
-mobile, import impossible depuis le Comparatif. Cinq correctifs livrés et déployés — squelette
+mobile, import impossible depuis le Comparatif, puis onglets illisibles sur iPhone. Cinq correctifs livrés et déployés — squelette
 d'attente, préchargement des onglets, cibles tactiles à 44 px, grilles de l'écran de facture en une
 à deux colonnes sur téléphone, photo réduite à 1600 px avant envoi (ce qui convertit aussi le HEIC).
 Prochaine brique à écrire : **lot C**, la journée.
 
 ## Bloqué
-- **Aucun écran authentifié n'a été vu en largeur mobile.** Les correctifs d'aujourd'hui sont
-  raisonnés depuis le code, mesurés et compilés, mais **jamais constatés à l'écran** : la session
-  locale a expiré (entrer le code n'est pas mon rôle) et le redimensionnement de fenêtre de Chrome
-  reste sans effet sur la zone de rendu. On attend une capture depuis l'iPhone de Liam, ou qu'il
-  rouvre une session sur `localhost`.
+- **Un seul écran a été vu sur un vrai iPhone** (capture de Liam, onglet Factures, 2026-09-13). Elle
+  a révélé deux défauts invisibles dans le code : l'en-tête passait **sous la barre d'état**, et les
+  quatre onglets débordaient au point de pousser l'onglet actif hors de l'écran. Corrigés par la
+  PR #6, **pas encore reconstatés** : une nouvelle capture est attendue. Je ne peux pas voir un
+  rendu mobile moi-même — le redimensionnement de fenêtre de Chrome reste sans effet sur la zone de
+  rendu, et la session locale expirée ne se rouvre pas sans le code, que je ne saisis pas.
+- **Prérequis oublié dans le parcours facture** : sans fournisseur enregistré, une facture ne peut
+  pas être validée. Le bandeau le dit, mais rien ne force à en créer un avant de photographier.
 - **La latence de 200 ms n'est pas supprimée, seulement masquée.** Aller-retour serveur mesuré entre
   127 et 385 ms en production, dont 99 à 165 ms de requêtes Supabase. Leviers restants : alléger
   l'écran Recettes, qui expédie les 97 recettes avec tous leurs ingrédients d'un bloc, et donner un
