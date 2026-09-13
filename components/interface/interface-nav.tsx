@@ -41,6 +41,10 @@ export function InterfaceNav() {
               <Link
                 key={item.href}
                 href={item.href}
+                // Le squelette d'attente rend le préchargement utile : Next
+                // récupère l'onglet avant le toucher, au lieu d'attendre le
+                // clic pour commencer.
+                prefetch
                 className={cn(
                   'flex items-center gap-2 rounded-full px-4 transition-colors shrink-0 whitespace-nowrap',
                   !isActive && 'active:opacity-70'
