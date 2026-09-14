@@ -1,8 +1,8 @@
 # STATUS — v0-sld-cafe-click-collect
-Mis à jour : 2026-09-14, 17:42
+Mis à jour : 2026-09-14, 17:54
 
 ## Position
-Branche `main`, à jour avec `origin/main` (`8a442c7`), working tree propre.
+Branche `main`, à jour avec `origin/main` (`85b9953`), working tree propre.
 
 - **PR #1** — interface cuisine, lots A à E — fusionnée le 2026-09-12 (`30c2962`).
 - **PR #2** — icône « Cuisine » sur iPhone — fusionnée le 2026-09-12 (`d7d3897`).
@@ -11,8 +11,9 @@ Branche `main`, à jour avec `origin/main` (`8a442c7`), working tree propre.
 - **PR #5** — photo de facture réduite avant l'envoi (`afe5c10`).
 - **PR #6** — onglets sortis de sous la barre d'état de l'iPhone (`ea0dcb4`).
 - **PR #7** — schémas de lecture refusés par l'API, corrigés et mis sous test (`8a442c7`).
+- **PR #8** — ingrédient créé et rattaché automatiquement, champs renommés (`85b9953`).
 
-Les sept sont fusionnées et **déployées en production**, chacune vérifiée `success` côté Vercel.
+Les huit sont fusionnées et **déployées en production**, chacune vérifiée `success` côté Vercel.
 
 Branches dormantes : `feat-formules`, `redesign`, `v0/cecerieu31-5424-0fa09333`, plus les deux
 branches fusionnées.
@@ -24,7 +25,7 @@ Aucun worktree secondaire.
 **Vert**, rejoué avant la PR #2, sans `next dev` actif : `tsc --noEmit` 0 · **100 tests** (8 fichiers)
 · `npm run build` 0.
 
-**Production Vercel : `8a442c7` en `success`** (2026-09-14, 17:41). Vérifié sur le site lui-même :
+**Production Vercel : `85b9953` en `success`** (2026-09-14, 17:53). Vérifié sur le site lui-même :
 
 - `/interface` déclare `/cuisine.webmanifest`, titre « Cuisine », `apple-touch-icon` en PNG ;
 - `/cuisine.webmanifest` répond 200 avec `start_url: /interface` ;
@@ -35,7 +36,9 @@ Aucun worktree secondaire.
 
 ## En cours
 Rien d'ouvert. Deux journées sur la PWA : lenteur ressentie, confort mobile, import impossible
-depuis le Comparatif, onglets illisibles sur iPhone, puis la panne de la première lecture réelle. Cinq correctifs livrés et déployés — squelette
+depuis le Comparatif, onglets illisibles sur iPhone, panne de la première lecture réelle, puis
+retours d'usage sur l'écran de facture — « conditionnement » incompréhensible et ingrédients à
+rattacher un par un. Cinq correctifs livrés et déployés — squelette
 d'attente, préchargement des onglets, cibles tactiles à 44 px, grilles de l'écran de facture en une
 à deux colonnes sur téléphone, photo réduite à 1600 px avant envoi (ce qui convertit aussi le HEIC).
 Prochaine brique à écrire : **lot C**, la journée.
@@ -54,12 +57,15 @@ Prochaine brique à écrire : **lot C**, la journée.
   127 et 385 ms en production, dont 99 à 165 ms de requêtes Supabase. Leviers restants : alléger
   l'écran Recettes, qui expédie les 97 recettes avec tous leurs ingrédients d'un bloc, et donner un
   retour visuel immédiat sur les boutons d'enregistrement.
-- **La première facture réelle est arrivée jusqu'à la lecture, et s'y est cassée** (2026-09-14) :
-  l'API refusait le schéma (`enum` mêlé à un `type` multiple sur `base_unit`). Ce qui a été prouvé au
-  passage : photo compressée, envoyée, stockée dans le bucket privé et facture créée en base — toute
-  la chaîne tient jusqu'au parsing. Corrigé par la PR #7, **relance en attente** : la photo est
-  conservée, le bouton « Relancer la lecture » s'affiche tant que la facture n'est pas validée.
-- **Aucune facture n'a encore été validée de bout en bout.** Les lots D et E restent **NON VÉRIFIÉS** de bout
+- ~~Première facture cassée à la lecture~~ **Lue avec succès le 2026-09-14** (capture à l'appui) :
+  « BAGUETTE L'ARTIGUETTE PRECUITE 300g / Carton 26 pièces », 92 % de confiance, 19,30 € le carton
+  de 26 → 0,74 € la pièce ; « SANDWICH FANNY MULTI CEREALES 140g », 92 % ; total 140,60 €. La chaîne
+  tient donc de la photo jusqu'aux lignes proposées. La panne initiale venait du schéma (`enum` mêlé
+  à un `type` multiple), corrigée par la PR #7.
+- **Aucune facture n'a encore été validée de bout en bout**, et **aucun fournisseur n'est enregistré**
+  — la validation le refusera tant que ce sera le cas. Prochaine relance attendue de Liam pour voir
+  le rattachement automatique à l'œuvre (PR #8) : attention, une relance **réécrit les lignes** et
+  perdrait des corrections manuelles. Les lots D et E restent **NON VÉRIFIÉS** de bout
   en bout. On attend que Liam photographie une facture depuis `/interface` sur son iPhone.
 - **Lot E sans matière** : Liam n'a pas de fiches recettes à importer pour l'instant.
 - **Étanchéité RLS des tables 004, 005 et 006 NON VÉRIFIÉE** : elles sont vides, donc une fuite
