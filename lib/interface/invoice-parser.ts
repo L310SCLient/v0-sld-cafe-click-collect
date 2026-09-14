@@ -30,6 +30,7 @@ export function isSupportedMediaType(value: string): value is InvoiceMediaType {
 
 const parsedLineSchema = z.object({
   raw_label: z.string().min(1),
+  ingredient_name: z.string().min(1).nullable(),
   quantity: z.number().positive().nullable(),
   pack_quantity: z.number().positive().nullable(),
   base_unit: z.enum(['g', 'ml', 'unit']).nullable(),
@@ -78,6 +79,7 @@ export const OUTPUT_SCHEMA = {
         additionalProperties: false,
         required: [
           'raw_label',
+          'ingredient_name',
           'quantity',
           'pack_quantity',
           'base_unit',
@@ -89,6 +91,11 @@ export const OUTPUT_SCHEMA = {
           raw_label: {
             type: 'string',
             description: "Libellé de l'article, copié mot pour mot depuis la facture.",
+          },
+          ingredient_name: {
+            type: ['string', 'null'],
+            description:
+              "Nom court et rangeable de l'ingrédient, tel qu'on le classerait dans un stock de cuisine : type de produit et calibre utile, sans le conditionnement ni la casse d'imprimerie. « BAGUETTE L'ARTIGUETTE PRECUITE 300g / Carton 26 pièces » donne « Baguette précuite 300 g ». null si la ligne ne nomme aucun produit.",
           },
           quantity: {
             type: ['number', 'null'],
@@ -132,6 +139,7 @@ Règles absolues :
 - Un champ que tu ne lis pas avec certitude vaut null. Ne devine jamais un prix, une quantité ou une date : un chiffre inventé deviendrait un coût de revient faux.
 - Les montants sont en CENTIMES, entiers. 8,90 € s'écrit 890.
 - Recopie raw_label mot pour mot depuis le document, sans le corriger ni le traduire.
+- ingredient_name est le même article rangé : nom court, casse normale, sans le conditionnement ni la marque de colis. « BAGUETTE L'ARTIGUETTE PRECUITE 300g / Carton 26 pièces » donne « Baguette précuite 300 g ». Garde le calibre s'il distingue le produit (300 g, 75 cl). null si la ligne ne nomme aucun produit.
 - Convertis les conditionnements dans l'unité de base : un sac de 5 kg donne pack_quantity 5000 et base_unit "g" ; une bouteille de 75 cl donne 750 et "ml" ; une boîte de 6 œufs donne 6 et "unit".
 - pack_price_cents est le prix d'UN conditionnement, pas le total de la ligne.
 - N'invente aucune ligne. Si la photo est illisible ou n'est pas une facture, renvoie une liste de lignes vide.

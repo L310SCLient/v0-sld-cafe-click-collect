@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { guardInterface } from '@/lib/interface/auth'
 import { isSupportedMediaType, parseInvoiceImage, type InvoiceMediaType } from '@/lib/interface/invoice-parser'
+import { groupLinesForIngredients, type LinePourIngredient } from '@/lib/interface/invoice-ingredients'
 
 /**
  * Factures : import, lecture automatique, validation.
@@ -187,20 +188,31 @@ export async function parseInvoice(invoiceId: string): Promise<ActionResult> {
   // Remplace les lignes proposées précédemment, sans toucher à une validation.
   await supabase.from('invoice_lines').delete().eq('invoice_id', invoiceId)
 
+  let ingredientsCrees = 0
+
   if (parsed.lines.length > 0) {
-    const { error: linesError } = await supabase.from('invoice_lines').insert(
-      parsed.lines.map((line) => ({
-        invoice_id: invoiceId,
-        raw_label: line.raw_label,
-        quantity: line.quantity,
-        pack_quantity: line.pack_quantity,
-        base_unit: line.base_unit,
-        pack_price_cents: line.pack_price_cents,
-        line_total_cents: line.line_total_cents,
-        confidence: line.confidence,
-      }))
-    )
+    const { data: inserted, error: linesError } = await supabase
+      .from('invoice_lines')
+      .insert(
+        parsed.lines.map((line) => ({
+          invoice_id: invoiceId,
+          raw_label: line.raw_label,
+          quantity: line.quantity,
+          pack_quantity: line.pack_quantity,
+          base_unit: line.base_unit,
+          pack_price_cents: line.pack_price_cents,
+          line_total_cents: line.line_total_cents,
+          confidence: line.confidence,
+        }))
+      )
+      .select('id, raw_label')
     if (linesError) return { error: linesError.message }
+
+    ingredientsCrees = await rattacherIngredients(
+      invoiceId,
+      parsed.lines,
+      (inserted ?? []) as { id: string; raw_label: string }[]
+    )
   }
 
   // Le fournisseur lu est rapproché d'un fournisseur existant par son nom.
@@ -232,12 +244,92 @@ export async function parseInvoice(invoiceId: string): Promise<ActionResult> {
   if (headerError) return { error: headerError.message }
 
   revalidate(invoiceId)
+  const suffixe =
+    ingredientsCrees > 0
+      ? ` ${ingredientsCrees} ingrédient${ingredientsCrees > 1 ? 's' : ''} créé${ingredientsCrees > 1 ? 's' : ''}, sans prix.`
+      : ''
   return {
     message:
       parsed.lines.length === 0
         ? 'Lecture terminée, aucune ligne d’article reconnue. À saisir à la main.'
-        : `${parsed.lines.length} ligne${parsed.lines.length > 1 ? 's' : ''} proposée${parsed.lines.length > 1 ? 's' : ''}. À vérifier avant validation.`,
+        : `${parsed.lines.length} ligne${parsed.lines.length > 1 ? 's' : ''} proposée${parsed.lines.length > 1 ? 's' : ''}. À vérifier avant validation.${suffixe}`,
   }
+}
+
+/**
+ * Crée ou retrouve l'ingrédient de chaque ligne, puis l'y rattache.
+ *
+ * Un ingrédient créé ici n'a **aucun prix** : le prix n'entre qu'à la
+ * validation de la facture, daté et sourcé. Une ligne sans unité reste non
+ * rattachée — un ingrédient sans unité de base n'a ni stock ni prix au kilo.
+ * Renvoie le nombre d'ingrédients réellement créés.
+ */
+async function rattacherIngredients(
+  invoiceId: string,
+  lues: {
+    raw_label: string
+    ingredient_name: string | null
+    base_unit: 'g' | 'ml' | 'unit' | null
+  }[],
+  inserees: { id: string; raw_label: string }[]
+): Promise<number> {
+  const supabase = createAdminClient()
+
+  // Les lignes insérées reviennent dans l'ordre envoyé ; en cas de doute on
+  // rapproche par libellé plutôt que de rattacher au hasard.
+  const memeOrdre = inserees.length === lues.length
+  const lignes: LinePourIngredient[] = lues.map((line, index) => {
+    const correspondante = memeOrdre
+      ? inserees[index]
+      : inserees.find((row) => row.raw_label === line.raw_label)
+    return {
+      id: correspondante?.id ?? '',
+      raw_label: line.raw_label,
+      ingredient_name: line.ingredient_name,
+      base_unit: line.base_unit,
+    }
+  })
+
+  let crees = 0
+  for (const groupe of groupLinesForIngredients(lignes.filter((line) => line.id !== ''))) {
+    const { data: existant } = await supabase
+      .from('ingredients')
+      .select('id')
+      .ilike('name', groupe.name)
+      .maybeSingle()
+
+    let ingredientId = existant ? String((existant as { id: string }).id) : null
+
+    if (!ingredientId) {
+      const { data: cree, error } = await supabase
+        .from('ingredients')
+        .insert({ name: groupe.name, base_unit: groupe.base_unit })
+        .select('id')
+        .single()
+
+      if (error) {
+        // Nom déjà pris entre-temps : on rattache à celui qui existe.
+        const { data: rattrape } = await supabase
+          .from('ingredients')
+          .select('id')
+          .ilike('name', groupe.name)
+          .maybeSingle()
+        if (!rattrape) continue
+        ingredientId = String((rattrape as { id: string }).id)
+      } else {
+        ingredientId = String((cree as { id: string }).id)
+        crees += 1
+      }
+    }
+
+    await supabase
+      .from('invoice_lines')
+      .update({ ingredient_id: ingredientId })
+      .in('id', groupe.lineIds)
+      .eq('invoice_id', invoiceId)
+  }
+
+  return crees
 }
 
 // ─── Corrections avant validation ───────────────────────────────────────────
