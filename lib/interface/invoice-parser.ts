@@ -53,7 +53,7 @@ export type ParsedInvoice = z.infer<typeof parsedInvoiceSchema>
 export type ParsedInvoiceLine = z.infer<typeof parsedLineSchema>
 
 /** Schéma JSON transmis à l'API pour contraindre la forme de la réponse. */
-const OUTPUT_SCHEMA = {
+export const OUTPUT_SCHEMA = {
   type: 'object',
   additionalProperties: false,
   required: ['supplier_name', 'invoice_date', 'invoice_number', 'total_cents', 'lines'],
@@ -100,8 +100,9 @@ const OUTPUT_SCHEMA = {
               "Contenu d'UN conditionnement, converti dans base_unit : 5 kg -> 5000, 1 L -> 1000, boîte de 6 -> 6.",
           },
           base_unit: {
-            type: ['string', 'null'],
-            enum: ['g', 'ml', 'unit', null],
+            // L'API refuse un enum combiné à un type multiple : la valeur
+            // facultative passe par anyOf (vérifié contre l'API réelle).
+            anyOf: [{ type: 'string', enum: ['g', 'ml', 'unit'] }, { type: 'null' }],
             description: "g pour un poids, ml pour un volume, unit pour ce qui se compte.",
           },
           pack_price_cents: {

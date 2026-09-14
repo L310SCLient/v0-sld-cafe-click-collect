@@ -65,7 +65,7 @@ const parsedFileSchema = z.object({ recipes: z.array(parsedRecipeSchema) })
 export type ParsedRecipeFile = z.infer<typeof parsedFileSchema>
 export type ParsedRecipeCard = z.infer<typeof parsedRecipeSchema>
 
-const OUTPUT_SCHEMA = {
+export const OUTPUT_SCHEMA = {
   type: 'object',
   additionalProperties: false,
   required: ['recipes'],
@@ -111,8 +111,9 @@ const OUTPUT_SCHEMA = {
                     "Quantité chiffrée pour la recette ENTIÈRE, convertie dans base_unit : 1 kg -> 1000, 75 cl -> 750, 6 œufs -> 6. null si la fiche ne chiffre pas (« une pincée »).",
                 },
                 base_unit: {
-                  type: ['string', 'null'],
-                  enum: ['g', 'ml', 'unit', null],
+                  // L'API refuse un enum combiné à un type multiple : la valeur
+                  // facultative passe par anyOf (vérifié contre l'API réelle).
+                  anyOf: [{ type: 'string', enum: ['g', 'ml', 'unit'] }, { type: 'null' }],
                   description: 'g pour un poids, ml pour un volume, unit pour ce qui se compte.',
                 },
                 confidence: {
