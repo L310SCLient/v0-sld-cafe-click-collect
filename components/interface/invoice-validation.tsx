@@ -377,7 +377,9 @@ function InvoiceLineRow({
         <>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-3">
             <div>
-              <FieldLabel htmlFor={`qty-${line.id}`}>Conditionnement</FieldLabel>
+              <FieldLabel htmlFor={`qty-${line.id}`} hint="ce que contient UN colis">
+                Contenu du colis
+              </FieldLabel>
               <input
                 id={`qty-${line.id}`}
                 value={packQuantity}
@@ -401,7 +403,9 @@ function InvoiceLineRow({
               </select>
             </div>
             <div>
-              <FieldLabel htmlFor={`price-${line.id}`}>Prix</FieldLabel>
+              <FieldLabel htmlFor={`price-${line.id}`} hint="prix d’UN colis">
+                Prix
+              </FieldLabel>
               <input
                 id={`price-${line.id}`}
                 value={price}
