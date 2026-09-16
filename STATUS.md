@@ -1,8 +1,8 @@
 # STATUS — v0-sld-cafe-click-collect
-Mis à jour : 2026-09-14, 17:54
+Mis à jour : 2026-09-16, 16:59
 
 ## Position
-Branche `main`, à jour avec `origin/main` (`85b9953`), working tree propre.
+Branche `main`, à jour avec `origin/main` (`c9c54f7`), working tree propre.
 
 - **PR #1** — interface cuisine, lots A à E — fusionnée le 2026-09-12 (`30c2962`).
 - **PR #2** — icône « Cuisine » sur iPhone — fusionnée le 2026-09-12 (`d7d3897`).
@@ -12,8 +12,9 @@ Branche `main`, à jour avec `origin/main` (`85b9953`), working tree propre.
 - **PR #6** — onglets sortis de sous la barre d'état de l'iPhone (`ea0dcb4`).
 - **PR #7** — schémas de lecture refusés par l'API, corrigés et mis sous test (`8a442c7`).
 - **PR #8** — ingrédient créé et rattaché automatiquement, champs renommés (`85b9953`).
+- **PR #9** — fournisseur créé à la lecture, ce qui débloque la validation (`c9c54f7`).
 
-Les huit sont fusionnées et **déployées en production**, chacune vérifiée `success` côté Vercel.
+Les neuf sont fusionnées et **déployées en production**, chacune vérifiée `success` côté Vercel.
 
 Branches dormantes : `feat-formules`, `redesign`, `v0/cecerieu31-5424-0fa09333`, plus les deux
 branches fusionnées.
@@ -25,7 +26,7 @@ Aucun worktree secondaire.
 **Vert**, rejoué avant la PR #2, sans `next dev` actif : `tsc --noEmit` 0 · **100 tests** (8 fichiers)
 · `npm run build` 0.
 
-**Production Vercel : `85b9953` en `success`** (2026-09-14, 17:53). Vérifié sur le site lui-même :
+**Production Vercel : `c9c54f7` en `success`** (2026-09-16, 16:58). Vérifié sur le site lui-même :
 
 - `/interface` déclare `/cuisine.webmanifest`, titre « Cuisine », `apple-touch-icon` en PNG ;
 - `/cuisine.webmanifest` répond 200 avec `start_url: /interface` ;
@@ -62,10 +63,11 @@ Prochaine brique à écrire : **lot C**, la journée.
   de 26 → 0,74 € la pièce ; « SANDWICH FANNY MULTI CEREALES 140g », 92 % ; total 140,60 €. La chaîne
   tient donc de la photo jusqu'aux lignes proposées. La panne initiale venait du schéma (`enum` mêlé
   à un `type` multiple), corrigée par la PR #7.
-- **Aucune facture n'a encore été validée de bout en bout**, et **aucun fournisseur n'est enregistré**
-  — la validation le refusera tant que ce sera le cas. Prochaine relance attendue de Liam pour voir
-  le rattachement automatique à l'œuvre (PR #8) : attention, une relance **réécrit les lignes** et
-  perdrait des corrections manuelles. Les lots D et E restent **NON VÉRIFIÉS** de bout
+- **Aucune facture n'a encore été validée de bout en bout.** Le blocage du fournisseur est levé
+  (PR #9 : il est créé à la lecture). Reste le geste de Liam : relancer la lecture, puis valider.
+  Attention, une relance **réécrit les lignes** et perdrait des corrections manuelles.
+- **Le lot F attend cette validation** : concevoir le comparatif par fournisseur contre une base
+  sans prix reviendrait à travailler sans pouvoir rien vérifier. Les lots D et E restent **NON VÉRIFIÉS** de bout
   en bout. On attend que Liam photographie une facture depuis `/interface` sur son iPhone.
 - **Lot E sans matière** : Liam n'a pas de fiches recettes à importer pour l'instant.
 - **Étanchéité RLS des tables 004, 005 et 006 NON VÉRIFIÉE** : elles sont vides, donc une fuite
@@ -129,6 +131,25 @@ c'est la seule vérification qui manque aux lots D et E.
   peuvent pas être créditées automatiquement ; l'écran devra les annoncer comme non comptées.
 - Clôture de journée : le reste devient de la surproduction, coût figé à cet instant.
 - Alerte de stock : seuil par ingrédient, facultatif ; à défaut, alerte à zéro.
+
+### Décisions actées — provenance des prix (2026-09-16)
+
+- Ce que Liam photographie au quotidien est un **bon de livraison valorisé**, pas une facture : la
+  lecture du 2026-09-14 en a sorti des prix (19,30 € le carton, 25,91 €, total 140,60 €).
+- Modèle retenu : **le bon de livraison donne un prix provisoire, la facture fait autorité et le
+  corrige, tout écart est signalé.** Liam hésitait entre « seule la facture fait foi » et « le bon
+  fait foi » ; la première l'aurait privé de prix jusqu'à la facture mensuelle, alors qu'il venait
+  de passer deux jours à en faire entrer.
+- Chaque prix portera donc sa **provenance**, affichée partout. À concrétiser dans les lots G et H.
+
+### Chantiers demandés, non commencés (2026-09-16)
+
+| | Chantier | Migration ? |
+|---|---|---|
+| **F** | Comparatif par fournisseur : 4 périodes (dernière facture, mois, trimestre, année) + rapport écrit | **non** — `ingredient_prices` porte déjà fournisseur, date et prix unitaire |
+| **G** | Bons de livraison : photo, rattachement à une facture, BL orphelins signalés | oui |
+| **H** | Rapprochement BL ↔ facture : écarts de prix | dépend de G |
+| **I** | Import en masse de factures | se greffe sur G |
 
 ### Décisions actées — lot D
 
