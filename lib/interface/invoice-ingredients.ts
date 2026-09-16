@@ -61,3 +61,20 @@ export function groupLinesForIngredients(lines: LinePourIngredient[]): GroupeIng
 
   return [...groupes.values()]
 }
+
+/** Mentions qui remplissent la case « fournisseur » sans nommer personne. */
+const NON_NOMS = new Set(['fournisseur', 'inconnu', 'n/a', 'na', 'sans', '-', '—'])
+
+/**
+ * Nom du fournisseur à créer ou à retrouver.
+ *
+ * Créer un fournisseur automatiquement fait courir un risque : un nom mal lu
+ * devient un doublon durable. On refuse donc ce qui ne nomme visiblement
+ * personne, et le reste est rattrapable à la main dans l'écran Factures.
+ */
+export function cleanSupplierName(brut: string | null): string | null {
+  const propre = (brut ?? '').trim().replace(/\s+/g, ' ').slice(0, 120)
+  if (propre.length < 2) return null
+  if (NON_NOMS.has(propre.toLowerCase())) return null
+  return propre
+}

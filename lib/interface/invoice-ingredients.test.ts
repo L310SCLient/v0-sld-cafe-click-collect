@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { cleanIngredientName, groupLinesForIngredients, type LinePourIngredient } from './invoice-ingredients'
+import {
+  cleanIngredientName,
+  cleanSupplierName,
+  groupLinesForIngredients,
+  type LinePourIngredient,
+} from './invoice-ingredients'
 
 function ligne(overrides: Partial<LinePourIngredient> & { id: string }): LinePourIngredient {
   return {
@@ -63,5 +68,29 @@ describe('regroupement des lignes par ingrédient', () => {
   it('porte l’unité de la première ligne du groupe', () => {
     const groupes = groupLinesForIngredients([ligne({ id: 'l1', ingredient_name: 'Lait', base_unit: 'ml' })])
     expect(groupes[0]?.base_unit).toBe('ml')
+  })
+})
+
+describe('nom de fournisseur tiré de la facture', () => {
+  it('resserre les espaces et coupe les blancs', () => {
+    expect(cleanSupplierName('  TRANSGOURMET   FRANCE ')).toBe('TRANSGOURMET FRANCE')
+  })
+
+  it('refuse un nom trop court pour être un fournisseur', () => {
+    expect(cleanSupplierName('T')).toBeNull()
+  })
+
+  it('refuse un nom vide ou absent', () => {
+    expect(cleanSupplierName(null)).toBeNull()
+    expect(cleanSupplierName('   ')).toBeNull()
+  })
+
+  it('écarte une mention qui n’est pas un nom : « fournisseur », « inconnu »', () => {
+    expect(cleanSupplierName('Fournisseur')).toBeNull()
+    expect(cleanSupplierName('INCONNU')).toBeNull()
+  })
+
+  it('coupe un nom démesuré plutôt que de le refuser', () => {
+    expect(cleanSupplierName('X'.repeat(200))).toHaveLength(120)
   })
 })
