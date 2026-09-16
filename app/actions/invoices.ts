@@ -5,7 +5,11 @@ import { z } from 'zod'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { guardInterface } from '@/lib/interface/auth'
 import { isSupportedMediaType, parseInvoiceImage, type InvoiceMediaType } from '@/lib/interface/invoice-parser'
-import { groupLinesForIngredients, type LinePourIngredient } from '@/lib/interface/invoice-ingredients'
+import {
+  cleanSupplierName,
+  groupLinesForIngredients,
+  type LinePourIngredient,
+} from '@/lib/interface/invoice-ingredients'
 
 /**
  * Factures : import, lecture automatique, validation.
@@ -215,16 +219,40 @@ export async function parseInvoice(invoiceId: string): Promise<ActionResult> {
     )
   }
 
-  // Le fournisseur lu est rapproché d'un fournisseur existant par son nom.
-  // Jamais créé automatiquement : un nom mal lu créerait un doublon durable.
+  // Le fournisseur lu est retrouvé par son nom, et créé s'il manque : sans
+  // fournisseur, une facture ne peut pas être validée, et l'écran restait
+  // bloqué sur « Fournisseur à renseigner ». Le risque assumé est le doublon
+  // sur un nom mal lu — rattrapable à la main, contrairement à un prix faux.
   let supplierId: string | null = null
-  if (parsed.supplier_name) {
+  const supplierName = cleanSupplierName(parsed.supplier_name)
+  if (supplierName) {
     const { data: match } = await supabase
       .from('suppliers')
       .select('id')
-      .ilike('name', parsed.supplier_name)
+      .ilike('name', supplierName)
       .maybeSingle()
-    supplierId = match ? String((match as { id: string }).id) : null
+
+    if (match) {
+      supplierId = String((match as { id: string }).id)
+    } else {
+      const { data: cree, error: supplierError } = await supabase
+        .from('suppliers')
+        .insert({ name: supplierName })
+        .select('id')
+        .single()
+
+      if (!supplierError) {
+        supplierId = String((cree as { id: string }).id)
+      } else {
+        // Nom pris entre-temps : on rattache à celui qui existe.
+        const { data: rattrape } = await supabase
+          .from('suppliers')
+          .select('id')
+          .ilike('name', supplierName)
+          .maybeSingle()
+        supplierId = rattrape ? String((rattrape as { id: string }).id) : null
+      }
+    }
   }
 
   const { error: headerError } = await supabase
