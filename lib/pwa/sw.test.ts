@@ -8,7 +8,8 @@ import { describe, expect, it } from 'vitest'
  * cache et le réseau du navigateur, absents de Node, sont simulés.
  */
 
-const ORIGIN = 'http://localhost:3000'
+const ORIGIN = 'https://sld-cafe.vercel.app'
+const ORIGIN_DEV = 'http://localhost:3000'
 const SOURCE = readFileSync(path.resolve(__dirname, '../../public/sw.js'), 'utf8')
 
 type FakeRequest = { url: string; method: string; mode: string }
@@ -52,11 +53,11 @@ class FakeCacheStorage {
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0))
 
-async function startWorker(storage = new FakeCacheStorage()) {
+async function startWorker(storage = new FakeCacheStorage(), origine = ORIGIN) {
   const handlers: Record<string, Handler> = {}
   const network = { online: true }
   const self = {
-    location: { origin: ORIGIN },
+    location: { origin: origine, hostname: new URL(origine).hostname },
     addEventListener: (type: string, handler: Handler) => {
       handlers[type] = handler
     },
@@ -80,7 +81,7 @@ async function startWorker(storage = new FakeCacheStorage()) {
   const request = async (pathname: string, mode = 'navigate') => {
     let responded: Promise<Response> | undefined
     handlers.fetch({
-      request: { url: ORIGIN + pathname, method: 'GET', mode },
+      request: { url: origine + pathname, method: 'GET', mode },
       respondWith: (p: Promise<Response>) => (responded = p),
     })
     const response = responded ? await responded : undefined
@@ -150,5 +151,21 @@ describe('service worker — mise à jour', () => {
     ;(await storage.open('sld-cafe-v1')).entries.set(keyOf('/interface/recettes'), new Response('PRIX'))
     await startWorker(storage)
     expect(await storage.keys()).not.toContain('sld-cafe-v1')
+  })
+})
+
+describe('service worker — en développement', () => {
+  it('ne met rien en cache : les noms de fichiers ne changent pas entre deux recompilations', async () => {
+    const sw = await startWorker(new FakeCacheStorage(), ORIGIN_DEV)
+    await sw.request('/_next/static/chunks/page.js', 'no-cors')
+    await sw.request('/carte')
+    const cache = await sw.cache()
+    expect([...cache.entries.keys()].some((url) => url.includes('/_next/static/'))).toBe(false)
+    expect([...cache.entries.keys()].some((url) => url.endsWith('/carte'))).toBe(false)
+  })
+
+  it('laisse passer la requête au serveur plutôt que de répondre à sa place', async () => {
+    const sw = await startWorker(new FakeCacheStorage(), ORIGIN_DEV)
+    expect(await sw.request('/interface/recettes')).toBeUndefined()
   })
 })

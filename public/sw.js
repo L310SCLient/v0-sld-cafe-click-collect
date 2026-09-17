@@ -64,6 +64,12 @@ self.addEventListener('fetch', (event) => {
   // Skip non-GET and external requests
   if (request.method !== 'GET' || url.origin !== self.location.origin) return
 
+  // En développement, les noms de fichiers de `/_next/static/` ne changent pas
+  // à chaque recompilation : le cache-first servait alors un JavaScript périmé
+  // sur un HTML neuf, et React échouait à s'attacher (erreur d'hydratation,
+  // écran à moitié ancien). Sur localhost, on ne met donc rien en cache.
+  if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') return
+
   // Static assets (fonts, images, CSS, JS): cache-first
   if (
     url.pathname.startsWith('/_next/static/') ||
