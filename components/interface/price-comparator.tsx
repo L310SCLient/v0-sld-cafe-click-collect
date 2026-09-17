@@ -9,9 +9,11 @@ import {
   computePriceChange,
   rankSuppliers,
 } from '@/lib/interface/prices'
+import type { EntreeRapport } from '@/lib/interface/supplier-report'
 import { formatCents, referenceUnitLabel } from '@/lib/interface/units'
 import type { IngredientCategory, IngredientWithStock } from '@/types'
 import { inputStyle } from './form-bits'
+import { SupplierReportView } from './supplier-report-view'
 
 const CATEGORY_LABEL: Record<IngredientCategory, string> = {
   legume: 'Légumes',
@@ -34,9 +36,11 @@ function perReferenceUnit(pricePerBaseUnit: number, unit: IngredientWithStock['b
 export function PriceComparator({
   ingredients,
   observationsByIngredient,
+  supplierReport,
 }: {
   ingredients: IngredientWithStock[]
   observationsByIngredient: Record<string, PriceObservation[]>
+  supplierReport: { suppliers: { id: string; name: string }[]; entries: EntreeRapport[] }
 }) {
   const [category, setCategory] = useState<IngredientCategory | 'all'>('all')
 
@@ -195,7 +199,23 @@ export function PriceComparator({
         </p>
       )}
 
+      {/* Le rapport répond à « qu'est-ce que CE fournisseur m'a augmenté »,
+          quand le reste de l'écran répond à « qui est le moins cher ». Il a ses
+          propres filtres : la famille choisie ci-dessus ne le concerne pas. */}
+      <div className="mb-5">
+        <SupplierReportView
+          suppliers={supplierReport.suppliers}
+          entries={supplierReport.entries}
+        />
+      </div>
+
       {/* Détail par ingrédient */}
+      <p
+        className="uppercase tracking-wider mb-2"
+        style={{ fontSize: '10px', fontWeight: 600, color: 'var(--espresso-60)' }}
+      >
+        Détail par ingrédient
+      </p>
       <ul className="space-y-2">
         {visible.map(({ ingredient, observations }) => {
           const comparison = compareSuppliers(observations)

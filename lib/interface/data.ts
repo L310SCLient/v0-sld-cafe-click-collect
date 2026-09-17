@@ -534,3 +534,77 @@ export async function fetchRecipeImport(importId: string): Promise<RecipeImportD
     recipes,
   }
 }
+
+/**
+ * Historique des prix, regroupé par ingrédient, avec le fournisseur de chaque
+ * relevé — la matière du rapport par fournisseur.
+ *
+ * Un seul aller-retour : les noms de fournisseur et d'ingrédient viennent en
+ * jointure plutôt qu'en requêtes séparées. Le type d'entrée est repris de
+ * `supplier-report` pour qu'un changement de forme casse à la compilation.
+ */
+export async function fetchSupplierPriceHistory(): Promise<{
+  suppliers: { id: string; name: string }[]
+  entries: import('./supplier-report').EntreeRapport[]
+}> {
+  await assertInterfaceAuth()
+  const supabase = createAdminClient()
+
+  const { data, error } = await supabase
+    .from('ingredient_prices')
+    .select(
+      'ingredient_id, supplier_id, price_per_base_unit, pack_quantity, pack_price_cents, observed_on, supplier:suppliers(name), ingredient:ingredients(name, base_unit)'
+    )
+    .order('observed_on', { ascending: true })
+
+  if (error) throw new Error(`Lecture de l'historique des prix impossible : ${error.message}`)
+
+  const suppliers = new Map<string, { id: string; name: string }>()
+  const entries = new Map<string, import('./supplier-report').EntreeRapport>()
+
+  for (const row of data ?? []) {
+    const price = row as Record<string, unknown>
+
+    const supplierRow = price.supplier as { name: string } | { name: string }[] | null
+    const supplierName = Array.isArray(supplierRow)
+      ? supplierRow[0]?.name ?? 'Fournisseur inconnu'
+      : supplierRow?.name ?? 'Fournisseur inconnu'
+
+    const ingredientRow = price.ingredient as
+      | { name: string; base_unit: IngredientWithStock['base_unit'] }
+      | { name: string; base_unit: IngredientWithStock['base_unit'] }[]
+      | null
+    const ingredient = Array.isArray(ingredientRow) ? ingredientRow[0] ?? null : ingredientRow
+
+    // Sans ingrédient joint, on ignore le relevé : on ne connaît ni son nom ni
+    // son unité, et inventer l'un des deux fausserait tout le rapport.
+    if (!ingredient) continue
+
+    const supplierId = String(price.supplier_id)
+    suppliers.set(supplierId, { id: supplierId, name: supplierName })
+
+    const ingredientId = String(price.ingredient_id)
+    const entry = entries.get(ingredientId) ?? {
+      ingredientId,
+      ingredientNom: ingredient.name,
+      baseUnit: ingredient.base_unit,
+      observations: [],
+    }
+    entry.observations.push({
+      supplierId,
+      supplierName,
+      pricePerBaseUnit: toNumber(price.price_per_base_unit),
+      packQuantity: toNumber(price.pack_quantity),
+      packPriceCents: toNumber(price.pack_price_cents),
+      observedOn: String(price.observed_on),
+    })
+    entries.set(ingredientId, entry)
+  }
+
+  return {
+    suppliers: [...suppliers.values()].sort((a, b) => a.name.localeCompare(b.name, 'fr')),
+    entries: [...entries.values()].sort((a, b) =>
+      a.ingredientNom.localeCompare(b.ingredientNom, 'fr')
+    ),
+  }
+}
