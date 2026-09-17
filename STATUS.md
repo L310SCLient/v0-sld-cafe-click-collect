@@ -1,8 +1,8 @@
 # STATUS — v0-sld-cafe-click-collect
-Mis à jour : 2026-09-16, 16:59
+Mis à jour : 2026-09-17, 15:21
 
 ## Position
-Branche `main`, à jour avec `origin/main` (`c9c54f7`), working tree propre.
+Branche `main`, à jour avec `origin/main` (`432bfee`), working tree propre.
 
 - **PR #1** — interface cuisine, lots A à E — fusionnée le 2026-09-12 (`30c2962`).
 - **PR #2** — icône « Cuisine » sur iPhone — fusionnée le 2026-09-12 (`d7d3897`).
@@ -13,8 +13,11 @@ Branche `main`, à jour avec `origin/main` (`c9c54f7`), working tree propre.
 - **PR #7** — schémas de lecture refusés par l'API, corrigés et mis sous test (`8a442c7`).
 - **PR #8** — ingrédient créé et rattaché automatiquement, champs renommés (`85b9953`).
 - **PR #9** — fournisseur créé à la lecture, ce qui débloque la validation (`c9c54f7`).
+- **PR #10** — comparatif par fournisseur (lot F) + bons de livraison et import en masse (lot G) (`c7ee3eb`).
+- **PR #11** — service worker sans cache en développement, comparatif rendu lisible (`94d2bd1`).
+- **PR #12** — rapprochement bon de livraison / facture (lot H) (`432bfee`).
 
-Les neuf sont fusionnées et **déployées en production**, chacune vérifiée `success` côté Vercel.
+Les douze sont fusionnées et **déployées en production**, chacune vérifiée `success` côté Vercel.
 
 Branches dormantes : `feat-formules`, `redesign`, `v0/cecerieu31-5424-0fa09333`, plus les deux
 branches fusionnées.
@@ -26,7 +29,7 @@ Aucun worktree secondaire.
 **Vert**, rejoué avant la PR #2, sans `next dev` actif : `tsc --noEmit` 0 · **100 tests** (8 fichiers)
 · `npm run build` 0.
 
-**Production Vercel : `c9c54f7` en `success`** (2026-09-16, 16:58). Vérifié sur le site lui-même :
+**Production Vercel : `432bfee` en `success`** (2026-09-17, 15:21). Vérifié sur le site lui-même :
 
 - `/interface` déclare `/cuisine.webmanifest`, titre « Cuisine », `apple-touch-icon` en PNG ;
 - `/cuisine.webmanifest` répond 200 avec `start_url: /interface` ;
@@ -63,11 +66,12 @@ Prochaine brique à écrire : **lot C**, la journée.
   de 26 → 0,74 € la pièce ; « SANDWICH FANNY MULTI CEREALES 140g », 92 % ; total 140,60 €. La chaîne
   tient donc de la photo jusqu'aux lignes proposées. La panne initiale venait du schéma (`enum` mêlé
   à un `type` multiple), corrigée par la PR #7.
-- **Aucune facture n'a encore été validée de bout en bout.** Le blocage du fournisseur est levé
-  (PR #9 : il est créé à la lecture). Reste le geste de Liam : relancer la lecture, puis valider.
+- **Aucune facture n'a encore été validée de bout en bout**, et aucun bon de livraison n'a été
+  importé ni rattaché. Les lots D, G et H sont donc du code juste, **jamais éprouvé sur de vrais
+  documents**. Reste le geste de Liam : relancer la lecture de sa facture, puis valider.
   Attention, une relance **réécrit les lignes** et perdrait des corrections manuelles.
-- **Le lot F attend cette validation** : concevoir le comparatif par fournisseur contre une base
-  sans prix reviendrait à travailler sans pouvoir rien vérifier. Les lots D et E restent **NON VÉRIFIÉS** de bout
+- **Aucun écran n'a été vu sur un téléphone depuis les lots F à H.** Seul le Comparatif a été
+  regardé en bureau, avec les données de démonstration. Les lots D et E restent **NON VÉRIFIÉS** de bout
   en bout. On attend que Liam photographie une facture depuis `/interface` sur son iPhone.
 - **Lot E sans matière** : Liam n'a pas de fiches recettes à importer pour l'instant.
 - **Étanchéité RLS des tables 004, 005 et 006 NON VÉRIFIÉE** : elles sont vides, donc une fuite
@@ -80,8 +84,8 @@ Prochaine brique à écrire : **lot C**, la journée.
 - **`sldcafe.fr` ne se résout pas** (aucun DNS) : seule `v0-sld-cafe-click-collect.vercel.app` répond.
 
 ## Prochaine action
-Photographie une facture depuis l'onglet Factures sur l'iPhone et valide-la : tout est en ligne, et
-c'est la seule vérification qui manque aux lots D et E.
+Valide ta facture en attente : c'est le seul geste qui manque, et il éprouve d'un coup les lots D,
+F, G et H — prix datés, comparatif rempli, rapprochement possible.
 
 ---
 
@@ -142,14 +146,30 @@ c'est la seule vérification qui manque aux lots D et E.
   de passer deux jours à en faire entrer.
 - Chaque prix portera donc sa **provenance**, affichée partout. À concrétiser dans les lots G et H.
 
-### Chantiers demandés, non commencés (2026-09-16)
+### Chantiers F à I — livrés le 2026-09-17
 
-| | Chantier | Migration ? |
+| | Chantier | État |
 |---|---|---|
-| **F** | Comparatif par fournisseur : 4 périodes (dernière facture, mois, trimestre, année) + rapport écrit | **non** — `ingredient_prices` porte déjà fournisseur, date et prix unitaire |
-| **G** | Bons de livraison : photo, rattachement à une facture, BL orphelins signalés | oui |
-| **H** | Rapprochement BL ↔ facture : écarts de prix | dépend de G |
-| **I** | Import en masse de factures | se greffe sur G |
+| **F** | Comparatif par fournisseur : 4 périodes + rapport écrit | livré, puis corrigé (périodes introuvables, compteurs « 1/1 » illisibles) |
+| **G** | Bons de livraison : photo, rattachement, orphelins signalés | livré, migration 007 appliquée et vérifiée en base |
+| **H** | Rapprochement bon ↔ facture : écarts de prix | livré, lectures confrontées à la base réelle |
+| **I** | Import en masse | livré avec G |
+
+Menés par trois agents en parallèle, sur des fichiers strictement séparés, puis relus, vérifiés et
+fusionnés ici. Ce que j'ai contrôlé moi-même plutôt que de m'en remettre à leurs comptes rendus :
+`tsc` 0, **169 tests**, build 0, les lectures soumises à Supabase (toutes acceptées), une garde
+d'accès sur chacune des 5 actions des bons, aucune écriture de prix depuis un bon ou un
+rapprochement, aucune cible tactile sous 44 px dans les écrans neufs.
+
+**Invariant tenu par construction** : `delivery_note_lines` est séparée de `invoice_lines`, donc
+aucun code de bon ne peut écrire dans `ingredient_prices`. Seule la validation d'une facture y écrit.
+
+### Données de démonstration à purger
+
+Deux fournisseurs, trois ingrédients et huit relevés de prix, tous préfixés **`DÉMO`**, ont été
+insérés en base le 2026-09-17 pour montrer le comparatif à l'écran. Ils sont **toujours là** et
+apparaissent dans le Comparatif et la liste des ingrédients. Les identifiants sont conservés dans
+`/tmp/demo-ids.json` ; un mot de Liam suffit à tout effacer.
 
 ### Décisions actées — lot D
 
