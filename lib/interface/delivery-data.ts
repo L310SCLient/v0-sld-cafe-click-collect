@@ -6,7 +6,7 @@ import type {
   DeliveryNoteWithLinks,
   InvoiceRef,
 } from './delivery-notes'
-import type { Supplier } from '@/types'
+import type { InvoiceLine, Supplier } from '@/types'
 
 /**
  * Lectures des bons de livraison.
@@ -129,4 +129,74 @@ export async function signDeliveryNoteImage(imagePath: string): Promise<string |
 
   if (error) return null
   return data?.signedUrl ?? null
+}
+
+
+// ─── Rapprochement avec la facture ──────────────────────────────────────────
+
+export interface BonRattacheAvecLignes {
+  note: DeliveryNote
+  lignes: DeliveryNoteLine[]
+}
+
+export interface LignesARapprocher {
+  lignesFacture: InvoiceLine[]
+  bons: BonRattacheAvecLignes[]
+}
+
+function mapInvoiceLine(row: Record<string, unknown>): InvoiceLine {
+  return {
+    id: String(row.id),
+    invoice_id: String(row.invoice_id),
+    raw_label: String(row.raw_label),
+    quantity: toNullableNumber(row.quantity),
+    pack_quantity: toNullableNumber(row.pack_quantity),
+    base_unit: (row.base_unit ?? null) as InvoiceLine['base_unit'],
+    pack_price_cents: toNullableNumber(row.pack_price_cents),
+    line_total_cents: toNullableNumber(row.line_total_cents),
+    ingredient_id: (row.ingredient_id ?? null) as string | null,
+    confidence: toNullableNumber(row.confidence),
+    created_at: String(row.created_at),
+  }
+}
+
+/**
+ * Les lignes d'une facture et celles de TOUS les bons qui lui sont rattachés,
+ * de quoi comparer les deux documents sans rien écrire.
+ *
+ * `bons: []` est un résultat, pas un manque : une facture sans bon rattaché
+ * n'est comparable à rien, et l'écran doit le dire plutôt que d'afficher un
+ * rapprochement vide qui se lirait « tout concorde ».
+ */
+export async function fetchReconciliationLines(invoiceId: string): Promise<LignesARapprocher> {
+  await assertInterfaceAuth()
+  const supabase = createAdminClient()
+
+  const [facture, bons] = await Promise.all([
+    supabase.from('invoice_lines').select('*').eq('invoice_id', invoiceId),
+    supabase
+      .from('delivery_notes')
+      .select('*, delivery_note_lines(*)')
+      .eq('invoice_id', invoiceId)
+      .order('delivery_date', { ascending: true }),
+  ])
+
+  if (facture.error) {
+    throw new Error(`Lecture des lignes de la facture impossible : ${facture.error.message}`)
+  }
+  if (bons.error) {
+    throw new Error(`Lecture des bons rattachés impossible : ${bons.error.message}`)
+  }
+
+  return {
+    lignesFacture: (facture.data ?? []).map((row) => mapInvoiceLine(row as Record<string, unknown>)),
+    bons: (bons.data ?? []).map((row) => {
+      const note = row as Record<string, unknown>
+      const lignes = (note.delivery_note_lines ?? []) as unknown[]
+      return {
+        note: mapDeliveryNote(note),
+        lignes: lignes.map((ligne) => mapDeliveryNoteLine(ligne as Record<string, unknown>)),
+      }
+    }),
+  }
 }
