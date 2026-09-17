@@ -150,6 +150,16 @@ export function PriceComparator({
         </select>
       )}
 
+      {/* Le rapport répond à « qu'est-ce que CE fournisseur m'a augmenté »,
+          quand le reste de l'écran répond à « qui est le moins cher ». Il a ses
+          propres filtres : la famille choisie ci-dessus ne le concerne pas. */}
+      <div className="mb-5">
+        <SupplierReportView
+          suppliers={supplierReport.suppliers}
+          entries={supplierReport.entries}
+        />
+      </div>
+
       {/* Classement des fournisseurs */}
       {ranking.length > 0 ? (
         <div
@@ -172,21 +182,21 @@ export function PriceComparator({
                   {entry.supplierName}
                 </span>
                 <span
-                  style={{
-                    fontSize: '13px',
-                    fontFamily: 'var(--font-mono)',
-                    color: 'var(--espresso-60)',
-                  }}
+                  className="shrink-0 text-right"
+                  style={{ fontSize: '12px', color: 'var(--espresso-60)', lineHeight: 1.35 }}
                 >
-                  {entry.cheapestCount}/{entry.participatedCount}
+                  {entry.participatedCount === 0
+                    ? 'aucun produit comparable'
+                    : entry.cheapestCount === 0
+                      ? `jamais le moins cher (${entry.participatedCount} comparé${entry.participatedCount > 1 ? 's' : ''})`
+                      : `le moins cher sur ${entry.cheapestCount} produit${entry.cheapestCount > 1 ? 's' : ''} sur ${entry.participatedCount}`}
                 </span>
               </li>
             ))}
           </ul>
           <p className="mt-2" style={{ fontSize: '11px', color: 'var(--espresso-40)', lineHeight: 1.4 }}>
-            Lecture : moins cher sur N ingrédients, sur M réellement comparables. Un ingrédient
-            qui n’a qu’un seul fournisseur n’entre pas dans le compte — être le seul ne rend pas
-            moins cher.
+            Un produit qui n’a qu’un seul fournisseur n’entre pas dans ce compte : être le seul
+            ne rend pas moins cher.
           </p>
         </div>
       ) : (
@@ -198,16 +208,6 @@ export function PriceComparator({
           ci-dessous restent affichés, avec leur évolution.
         </p>
       )}
-
-      {/* Le rapport répond à « qu'est-ce que CE fournisseur m'a augmenté »,
-          quand le reste de l'écran répond à « qui est le moins cher ». Il a ses
-          propres filtres : la famille choisie ci-dessus ne le concerne pas. */}
-      <div className="mb-5">
-        <SupplierReportView
-          suppliers={supplierReport.suppliers}
-          entries={supplierReport.entries}
-        />
-      </div>
 
       {/* Détail par ingrédient */}
       <p

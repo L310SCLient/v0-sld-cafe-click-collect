@@ -83,7 +83,10 @@ export function SupplierReportView({
   suppliers: { id: string; name: string }[]
   entries: EntreeRapport[]
 }) {
-  const [supplierId, setSupplierId] = useState<string | null>(null)
+  // Le premier fournisseur est sélectionné d'emblée : les périodes étaient
+  // invisibles tant qu'on n'avait pas deviné qu'il fallait cliquer, ce qui
+  // cachait précisément la fonction demandée.
+  const [supplierId, setSupplierId] = useState<string | null>(suppliers[0]?.id ?? null)
   const [periode, setPeriode] = useState<PeriodeRapport>('derniere')
 
   // Le rapport ne voit que les relevés du fournisseur choisi : c'est ce
@@ -128,18 +131,14 @@ export function SupplierReportView({
           <Pastille
             key={supplier.id}
             actif={supplier.id === supplierId}
-            onClick={() => setSupplierId(supplier.id === supplierId ? null : supplier.id)}
+            onClick={() => setSupplierId(supplier.id)}
           >
             {supplier.name}
           </Pastille>
         ))}
       </div>
 
-      {!fournisseur ? (
-        <p className="mt-3" style={{ fontSize: '13px', color: 'var(--espresso-60)', lineHeight: 1.45 }}>
-          Choisis un fournisseur pour voir ce qu’il a augmenté, baissé ou tenu.
-        </p>
-      ) : (
+      {fournisseur && (
         <>
           <div className="flex flex-wrap gap-2 mt-3">
             {PERIODES.map((option) => (
