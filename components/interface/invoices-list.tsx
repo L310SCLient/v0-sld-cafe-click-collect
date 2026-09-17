@@ -13,7 +13,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog'
 import { formatCents } from '@/lib/interface/units'
+import type { DeliveryNoteWithLinks } from '@/lib/interface/delivery-notes'
+import { resumeRattachement } from '@/lib/interface/delivery-notes'
 import type { Invoice, InvoiceStatus, Supplier } from '@/types'
+import { DeliveryNotesList } from './delivery-notes-list'
 import { FieldLabel, PrimaryButton, inputStyle } from './form-bits'
 import { InvoiceImport } from './invoice-import'
 
@@ -37,16 +40,21 @@ function StatusIcon({ status }: { status: InvoiceStatus }) {
 export function InvoicesList({
   invoices,
   suppliers,
+  deliveryNotes,
   parsingAvailable,
 }: {
   invoices: (Invoice & { supplier: Supplier | null; lineCount: number })[]
   suppliers: Supplier[]
+  deliveryNotes: DeliveryNoteWithLinks[]
   /** Faux quand ANTHROPIC_API_KEY est absente côté serveur. */
   parsingAvailable: boolean
 }) {
   const [isAddingSupplier, setIsAddingSupplier] = useState(false)
 
   const toValidate = invoices.filter((invoice) => invoice.status === 'a_valider').length
+  // Les bons en attente sont annoncés dès l'en-tête : ce sont des livraisons
+  // reçues dont la facture manque encore, donc des prix encore provisoires.
+  const bonsEnAttente = resumeRattachement(deliveryNotes).orphelins
 
   return (
     <div>
@@ -59,6 +67,7 @@ export function InvoicesList({
       <p className="mb-4" style={{ fontSize: '12px', color: 'var(--espresso-60)' }}>
         {invoices.length} facture{invoices.length > 1 ? 's' : ''}
         {toValidate > 0 && ` · ${toValidate} à valider`}
+        {bonsEnAttente > 0 && ` · ${bonsEnAttente} bon${bonsEnAttente > 1 ? 's' : ''} sans facture`}
         {` · ${suppliers.length} fournisseur${suppliers.length > 1 ? 's' : ''}`}
       </p>
 
@@ -199,6 +208,12 @@ export function InvoicesList({
           })}
         </ul>
       )}
+
+      <DeliveryNotesList
+        notes={deliveryNotes}
+        invoices={invoices}
+        parsingAvailable={parsingAvailable}
+      />
 
       <SupplierDialog
         open={isAddingSupplier}
