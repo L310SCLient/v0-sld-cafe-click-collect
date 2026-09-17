@@ -1,4 +1,8 @@
-import { fetchIngredientsWithStock, fetchPriceObservations } from '@/lib/interface/data'
+import {
+  fetchIngredientsWithStock,
+  fetchPriceObservations,
+  fetchSupplierPriceHistory,
+} from '@/lib/interface/data'
 import { PriceComparator } from '@/components/interface/price-comparator'
 
 export const metadata = {
@@ -6,9 +10,10 @@ export const metadata = {
 }
 
 export default async function ComparatifPage() {
-  const [ingredients, observations] = await Promise.all([
+  const [ingredients, observations, supplierReport] = await Promise.all([
     fetchIngredientsWithStock(),
     fetchPriceObservations(),
+    fetchSupplierPriceHistory(),
   ])
 
   return (
@@ -16,6 +21,7 @@ export default async function ComparatifPage() {
       ingredients={ingredients}
       // Une Map ne traverse pas la frontière serveur/client : on passe un objet.
       observationsByIngredient={Object.fromEntries(observations)}
+      supplierReport={supplierReport}
     />
   )
 }
